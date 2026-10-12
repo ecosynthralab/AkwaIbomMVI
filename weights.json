@@ -1,0 +1,18 @@
+{
+  "note": "AHP weights for the Earth Engine build job (paper matrix). Replace with weights.json downloaded from the dashboard.",
+  "weights": {
+    "stream": 0.2218,
+    "wetland": 0.2022,
+    "precip": 0.1295,
+    "twi": 0.098,
+    "lst": 0.0804,
+    "cropland": 0.0711,
+    "elev": 0.048,
+    "slope": 0.0311,
+    "ndvi": 0.0311,
+    "health": 0.0253,
+    "road": 0.0253,
+    "builtup": 0.0253,
+    "bare": 0.0109
+  }
+}
