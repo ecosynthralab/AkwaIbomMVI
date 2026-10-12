@@ -233,9 +233,28 @@ def main():
 
 
 def round_geom(g, nd=4):
+    """Polygon/MultiPolygon with rounded coordinates; flattens GeometryCollections."""
     def rc(c):
         return [round(c[0], nd), round(c[1], nd)] if isinstance(c[0], (int, float)) else [rc(x) for x in c]
-    return {'type': g['type'], 'coordinates': rc(g['coordinates'])}
+
+    polys = []
+
+    def walk(geom):
+        if not geom:
+            return
+        t = geom.get('type')
+        if t == 'Polygon':
+            polys.append(rc(geom['coordinates']))
+        elif t == 'MultiPolygon':
+            polys.extend(rc(geom['coordinates']))
+        elif t == 'GeometryCollection':
+            for x in geom.get('geometries', []):
+                walk(x)
+
+    walk(g)
+    if len(polys) == 1:
+        return {'type': 'Polygon', 'coordinates': polys[0]}
+    return {'type': 'MultiPolygon', 'coordinates': polys}
 
 
 if __name__ == '__main__':
