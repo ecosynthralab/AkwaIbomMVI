@@ -130,7 +130,7 @@ footer{max-width:1280px;margin:0 auto;padding:16px 20px 28px;color:var(--muted);
 
 <!-- RUN ANALYSIS -->
 <section class="tab" id="t-run">
-  <div id="runOff" class="note" style="display:none">The analysis service is not connected yet. Set <code>window.MVI_API</code> in <code>site-config.js</code> to your deployed API URL.</div>
+  <div id="runOff" class="note" style="display:none">The analysis app is not connected yet. Set <code>window.MVI_APP</code> in <code>site-config.js</code> to your published Earth Engine App URL.</div>
   <div id="runForm">
     <div class="card">
       <h3>Run a vulnerability analysis</h3>
@@ -716,6 +716,8 @@ function applyPreset(kind){
  [s,e]=clampDates(s,e);$('#runStart').value=isoD(s);$('#runEnd').value=isoD(e);}
 document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.preset)));
 async function initRun(){
+ const APP=(window.MVI_APP||'').trim();
+ if(APP){$('#runOff').style.display='none';$('#runForm').innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h3>Run analysis (Google Earth Engine App)</h3><a class="btn" href="'+esc(APP)+'" target="_blank" rel="noopener">Open full screen</a></div><p class="hint">Pick an LGA and a period, run the model, and download GeoTIFFs. Runs on Google Earth Engine; no account needed. If the panel stays blank, use Open full screen.</p><iframe src="'+esc(APP)+'" title="Akwa Ibom MVI Earth Engine App" style="width:100%;height:820px;border:1px solid var(--line);border-radius:10px;background:var(--soft)" loading="lazy"></iframe></div>';return;}
  if(!API){$('#runOff').style.display='';$('#runForm').style.display='none';return;}
  try{META=await api('/meta');}
  catch(e){$('#runOff').style.display='';$('#runOff').innerHTML='Analysis service unavailable: '+esc(e.message)+' The free host may be waking up; reload in a minute.';$('#runForm').style.display='none';return;}
