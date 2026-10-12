@@ -87,6 +87,7 @@ footer{max-width:1280px;margin:0 auto;padding:16px 20px 28px;color:var(--muted);
 
 <nav class="tabs" id="tabs">
   <button data-t="over" class="on">Overview</button>
+  <button data-t="run">Run analysis</button>
   <button data-t="ahp">AHP weights</button>
   <button data-t="val">Validation &amp; sensitivity</button>
   <button data-t="gee">Earth Engine script</button>
@@ -124,6 +125,34 @@ footer{max-width:1280px;margin:0 auto;padding:16px 20px 28px;color:var(--muted);
       <p class="hint">Enter 2024 confirmed cases from DHIS2 in the editable column to compute incidence and unlock validation.</p>
       <div class="scroll"><table id="tbl"></table></div>
     </div>
+  </div>
+</section>
+
+<!-- RUN ANALYSIS -->
+<section class="tab" id="t-run">
+  <div id="runOff" class="note" style="display:none">The analysis service is not connected yet. Set <code>window.MVI_API</code> in <code>site-config.js</code> to your deployed API URL.</div>
+  <div id="runForm">
+    <div class="card">
+      <h3>Run a vulnerability analysis</h3>
+      <p class="hint">Choose an area and a period. The service runs the model in Google Earth Engine on your current AHP weights (see the AHP tab) and returns statistics and GeoTIFF rasters. Typical runs take a few minutes; the same settings run again are served from cache.</p>
+      <div class="row" style="gap:16px;align-items:flex-end">
+        <label>Area<br><select id="runLga"><option value="ALL">All of Akwa Ibom</option></select></label>
+        <label>Start<br><input type="date" id="runStart"></label>
+        <label>End<br><input type="date" id="runEnd"></label>
+        <button class="primary" id="runBtn">Run analysis</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <span class="muted" style="font-size:.85rem">Presets:</span>
+        <select id="runYear" aria-label="Preset year"></select>
+        <button data-preset="year">Full year</button>
+        <button data-preset="wet">Wet season (Apr–Oct)</button>
+        <button data-preset="dry">Dry season (Nov–Mar)</button>
+        <button data-preset="last12">Last 12 months</button>
+      </div>
+      <p class="muted" style="font-size:.8rem;margin:10px 0 0">Periods must be 30 days to about 3 years, from 2016 to about 6 weeks ago (satellite rainfall and vegetation data lag). Population is WorldPop 2020 for every period.</p>
+      <div id="runMsg" style="margin-top:10px"></div>
+    </div>
+    <div id="runOut" style="display:none;margin-top:14px"></div>
   </div>
 </section>
 
@@ -212,6 +241,7 @@ footer{max-width:1280px;margin:0 auto;padding:16px 20px 28px;color:var(--muted);
   <div>&copy; <span id="yr"></span> Ecosynthra Lab</div>
 </footer>
 
+<script src="site-config.js"></script>
 <script>
 /* ---------- constants ---------- */
 const CRIT=[
@@ -664,7 +694,85 @@ $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));});
 
-renderMatrix();renderAll();autoload();
+
+/* ---------- Run analysis (calls the Earth Engine API service) ---------- */
+const API=(window.MVI_API||'').replace(/\/$/,'');
+let META=null,RUNRES=null;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const isoD=d=>d.toISOString().slice(0,10);
+async function api(path,opts){
+ const r=await fetch(API+path,opts);
+ if(!r.ok){let m=r.statusText;try{const j=await r.json();m=typeof j.detail==='string'?j.detail:JSON.stringify(j.detail);}catch(_){}throw new Error(m);}
+ return r.json();}
+function setRunMsg(h){$('#runMsg').innerHTML=h;}
+function clampDates(s,e){const mn=new Date(META.min_date),mx=new Date(META.max_date);
+ if(s<mn)s=mn;if(e>mx)e=mx;if(e<s)e=s;return[s,e];}
+function applyPreset(kind){
+ if(!META)return;const y=+$('#runYear').value;let s,e;
+ if(kind==='year'){s=new Date(Date.UTC(y,0,1));e=new Date(Date.UTC(y,11,31));}
+ else if(kind==='wet'){s=new Date(Date.UTC(y,3,1));e=new Date(Date.UTC(y,9,31));}
+ else if(kind==='dry'){s=new Date(Date.UTC(y-1,10,1));e=new Date(Date.UTC(y,2,31));}
+ else{e=new Date(META.max_date);s=new Date(e);s.setUTCDate(s.getUTCDate()-364);}
+ [s,e]=clampDates(s,e);$('#runStart').value=isoD(s);$('#runEnd').value=isoD(e);}
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.preset)));
+async function initRun(){
+ if(!API){$('#runOff').style.display='';$('#runForm').style.display='none';return;}
+ try{META=await api('/meta');}
+ catch(e){$('#runOff').style.display='';$('#runOff').innerHTML='Analysis service unavailable: '+esc(e.message)+' The free host may be waking up; reload in a minute.';$('#runForm').style.display='none';return;}
+ $('#runOff').style.display='none';$('#runForm').style.display='';
+ $('#runLga').innerHTML='<option value="ALL">All of Akwa Ibom ('+META.lgas.length+' LGAs)</option>'+META.lgas.map(n=>'<option>'+esc(n)+'</option>').join('');
+ const y1=+META.max_date.slice(0,4),y0=+META.min_date.slice(0,4);let o='';
+ for(let y=y1;y>=y0;y--)o+='<option>'+y+'</option>';$('#runYear').innerHTML=o;
+ $('#runStart').min=META.min_date;$('#runStart').max=META.max_date;$('#runEnd').min=META.min_date;$('#runEnd').max=META.max_date;
+ applyPreset('last12');}
+$('#runBtn').addEventListener('click',async()=>{
+ const btn=$('#runBtn'),start=$('#runStart').value,end=$('#runEnd').value;
+ if(!start||!end){setRunMsg('<span class="bad">Choose a start and end date.</span>');return;}
+ btn.disabled=true;$('#runOut').style.display='none';const t0=Date.now();
+ const body={start,end,lga:$('#runLga').value,weights:Object.fromEntries(CRIT.map((c,i)=>[c.k,W[i]]))};
+ try{
+  setRunMsg('Submitting…');
+  const j=await api('/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  let st;
+  for(;;){st=await api('/jobs/'+j.id);
+   setRunMsg('<span class="pill">'+esc(st.status)+'</span> '+esc(st.message||'')+' · '+Math.round((Date.now()-t0)/1000)+' s');
+   if(st.status==='done'||st.status==='error')break;
+   if(Date.now()-t0>25*60e3)throw new Error('Timed out after 25 minutes.');
+   await sleep(3000);}
+  if(st.status==='error')throw new Error(st.error||'Analysis failed.');
+  setRunMsg('<span class="ok">Finished in '+Math.round((Date.now()-t0)/1000)+' s.</span>');
+  renderRun(st.result);
+ }catch(e){setRunMsg('<span class="bad">'+esc(e.message)+'</span>');}
+ finally{btn.disabled=false;}
+});
+function renderRun(res){
+ RUNRES=res;const R=res.rows,sum=k=>R.reduce((a,r)=>a+(r[k]||0),0);
+ const T=sum('pop_total')||1,mm=R.filter(r=>r.mean_mvi!=null);
+ const mean=mm.length?mm.reduce((a,r)=>a+r.mean_mvi,0)/mm.length:NaN;
+ const k=(v,l)=>'<div class="card kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';
+ let h='<div class="grid g4">'+k(esc(res.lga==='ALL'?'Akwa Ibom':res.lga),res.period.start+' → '+res.period.end)+
+  k(f3(mean),'Mean MVI')+k(fmt(sum('area_high_km2'))+' km²','High-vulnerability area ('+f1(sum('area_high_km2')/((sum('area_high_km2')+sum('area_med_km2')+sum('area_low_km2'))||1)*100)+'%)')+
+  k(fmt(sum('pop_high')),'People in high zones ('+f1(sum('pop_high')/T*100)+'%)')+
+  k(fmt(sum('pop_med')),'People in medium zones ('+f1(sum('pop_med')/T*100)+'%)')+
+  k(fmt(sum('pop_low')),'People in low zones ('+f1(sum('pop_low')/T*100)+'%)')+'</div>';
+ h+='<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Preview</h3>';
+ if(res.previews.mvi){h+='<div class="row" style="margin-bottom:6px"><button data-pv="mvi">MVI</button><button data-pv="class">Classes</button></div><img id="pvImg" src="'+esc(res.previews.mvi)+'" alt="MVI preview" style="max-width:100%;border-radius:8px;background:var(--soft)"><div class="legend" style="margin-top:6px"><span><i style="background:#1a9850"></i>Low</span><span><i style="background:#fee08b"></i>Medium</span><span><i style="background:#d73027"></i>High</span></div>';}
+ else h+='<p class="muted">No preview available.</p>';
+ h+='</div><div class="card"><h3>Download rasters (GeoTIFF)</h3><p class="hint">100 m, UTM zone 32N (EPSG:32632). Links expire after about an hour.</p>';
+ if(res.downloads.mvi)h+='<p><a class="btn" href="'+esc(res.downloads.mvi)+'" download>MVI (float32, higher = more vulnerable)</a></p><p><a class="btn" href="'+esc(res.downloads.class)+'" download>Classes (1 low, 2 medium, 3 high)</a></p><p class="muted" style="font-size:.8rem">NoData: MVI = −9999, classes = 0. In QGIS set these as the layer\'s NoData value if it is not read automatically.</p>';
+ else h+='<p class="muted">Raster download unavailable for this request.</p>';
+ h+='<p class="muted" style="font-size:.8rem;margin-top:10px">Classes are equal thirds of the 2nd–98th percentile MVI range across Akwa Ibom for this period (breaks '+f3(res.breaks[0])+' and '+f3(res.breaks[1])+'), so they describe <b>relative</b> vulnerability within the state.</p></div></div>';
+ if(res.notes.length)h+='<div class="note" style="margin-top:14px">'+res.notes.map(esc).join('<br>')+'</div>';
+ h+='<div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>Statistics by LGA</h3><button id="runCsv">Download table (CSV)</button></div><div class="scroll"><table><thead><tr><th>LGA</th><th>Mean MVI</th><th>Population</th><th>% high</th><th>% med</th><th>% low</th><th>High km²</th><th>Med km²</th><th>Low km²</th></tr></thead><tbody>';
+ R.forEach(r=>{const t=r.pop_total||1;h+='<tr><td>'+esc(r.name)+'</td><td>'+f3(r.mean_mvi)+'</td><td>'+fmt(r.pop_total)+'</td><td>'+f1(r.pop_high/t*100)+'</td><td>'+f1(r.pop_med/t*100)+'</td><td>'+f1(r.pop_low/t*100)+'</td><td>'+f1(r.area_high_km2)+'</td><td>'+f1(r.area_med_km2)+'</td><td>'+f1(r.area_low_km2)+'</td></tr>';});
+ h+='</tbody></table></div></div>';
+ const o=$('#runOut');o.innerHTML=h;o.style.display='';
+ o.querySelectorAll('[data-pv]').forEach(b=>b.addEventListener('click',()=>{$('#pvImg').src=res.previews[b.dataset.pv];}));
+ const c=$('#runCsv');if(c)c.onclick=()=>{const hd=['lga','mean_mvi','pop_total','pop_high','pop_med','pop_low','area_high_km2','area_med_km2','area_low_km2'];
+  dl('akwa_ibom_mvi_'+res.period.start+'_'+res.period.end+'.csv',[hd.join(',')].concat(R.map(r=>['"'+r.name+'"',r.mean_mvi,r.pop_total,r.pop_high,r.pop_med,r.pop_low,r.area_high_km2,r.area_med_km2,r.area_low_km2].join(','))).join('\n'),'text/csv');};
+}
+
+renderMatrix();renderAll();autoload();initRun();
 </script>
 </body>
 </html>
