@@ -3,7 +3,8 @@
   "scale_m": 100,
   "crs": "EPSG:32632",
   "distance_cap_m": 5000,
-  "access_threshold_km": 5,
+  "access_threshold_km": 2,
+  "water_radius_m": 1000,
   "lga_geojson": "data/akwa_ibom_lga_malaria_2023.geojson",
   "facilities_geojson": "data/grid3_health_facilities.geojson",
   "weights": {

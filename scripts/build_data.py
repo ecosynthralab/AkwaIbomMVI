@@ -9,7 +9,7 @@ Habitat suitability combines FIVE layers with equal weights (0.2 each; provision
   rainfall      CHIRPS annual total            p2-p98 min-max, higher = more suitable
   temperature   MODIS LST day mean (deg C)     peaks at 25 C, zero at about 16 and 34 C (Mordecai et al. 2013)
   ndvi          MODIS MOD13Q1 annual mean      p2-p98 min-max, higher = more suitable
-  surface_water JRC Global Surface Water       1 - distance to water (occurrence >= 10%) / cap
+  surface_water JRC surface water + streams    share of land within 1 km that is water; p2-p98 min-max
   twi           Topographic Wetness Index      p2-p98 min-max, higher = more suitable
 Scores are 0-1 where 1 = most suitable for Anopheles habitat. Suitability is NOT disease risk: population and
 health-facility access are reported separately and never enter the suitability score.
@@ -49,6 +49,7 @@ def main():
 
     YEAR, SCALE, CRS, CAP = cfg['year'], cfg['scale_m'], cfg['crs'], cfg['distance_cap_m']
     ACCESS_KM = cfg['access_threshold_km']
+    WATER_RADIUS_M = cfg['water_radius_m']
     d0, d1 = f'{YEAR}-01-01', f'{YEAR + 1}-01-01'
 
     # ---- zones and facilities from the repo (no assets to maintain)
@@ -73,14 +74,17 @@ def main():
     # ---- surface water: JRC occurrence, long-term; permanent water bodies are masked out of the land
     gsw = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').unmask(0)
     land = gsw.lt(50)
-    water_present = (gsw.gte(10).selfMask().reduceResolution(reducer=ee.Reducer.mean(), maxPixels=1024)
-                     .reproject(proj).gt(0.02))
-    d_water = (water_present.selfMask().distance(ee.Kernel.euclidean(CAP, 'meters'))
-               .unmask(CAP).min(CAP))
-
-    # ---- terrain / TWI
     merit = ee.Image('MERIT/Hydro/v1_0_1')
     upa = merit.select('upa')
+    # water = any JRC occurrence (>=1%) or a mapped stream (upstream area > 2 km2). Inland water here is
+    # mostly small rivers and wetlands, so a distance-to-big-water score is flat; use local water density.
+    water_mask = gsw.gte(1).Or(upa.gt(2))
+    water_present = (water_mask.reduceResolution(reducer=ee.Reducer.mean(), maxPixels=1024)
+                     .reproject(proj).gt(0.02))
+    water_density = (water_present.focal_mean(radius=WATER_RADIUS_M, kernelType='circle', units='meters')
+                     .rename('surface_water'))
+
+    # ---- terrain / TWI
     slope_m = ee.Terrain.slope(merit.select('elv')).multiply(3.141592653589793 / 180).max(0.0017)
     twi = upa.multiply(1e6).divide(90).divide(slope_m.tan()).log().rename('twi')
 
@@ -105,7 +109,7 @@ def main():
         pnorm(precip, 'rainfall').rename('s_rainfall'),
         ee.Image(1).subtract(lst_c.subtract(25).abs().divide(9)).clamp(0, 1).rename('s_temperature'),
         pnorm(ndvi, 'ndvi').rename('s_ndvi'),
-        ee.Image(1).subtract(d_water.divide(CAP)).rename('s_surface_water'),
+        pnorm(water_density, 'surface_water').rename('s_surface_water'),
         pnorm(twi, 'twi').rename('s_twi'),
     ]).updateMask(land)
 
@@ -133,7 +137,7 @@ def main():
         suit,
         ee.Image(1).updateMask(valid).rename('n'),
         precip.updateMask(valid), lst_c.updateMask(valid), ndvi.updateMask(valid),
-        gsw.updateMask(valid).rename('water_occ'),
+        water_density.multiply(100).updateMask(valid).rename('water_pct'),
         twi.updateMask(valid),
         pop.updateMask(valid).rename('pop_total'),
         pop.updateMask(cls.eq(3)).rename('pop_high'),
@@ -169,7 +173,7 @@ def main():
                 's': [mean('s_' + k, 5) for k in KEYS],
                 'suit': mean('suit', 5),
                 'raw': {'rainfall_mm': mean('rainfall', 1), 'temperature_c': mean('temperature', 2),
-                        'ndvi': mean('ndvi', 3), 'water_occurrence_pct': mean('water_occ', 1),
+                        'ndvi': mean('ndvi', 3), 'water_density_pct': mean('water_pct', 1),
                         'twi': mean('twi', 2)},
                 'pop_total': round(pop_t),
                 'ph': round(p.get('pop_high') or 0), 'pm': round(p.get('pop_med') or 0),

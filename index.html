@@ -197,7 +197,7 @@ function detail(){
   const row=(a,v)=>`<dt>${a}</dt><dd>${v}</dd>`;
   el.innerHTML=`<h2>${esc(d.name)}</h2>
   <h3>Habitat suitability</h3>${s?`<dl>${row('Combined score (0 to 1)',fmt(s.suit,2))}${LKEYS.map((k,i)=>row(LAYERS[k]+' score',fmt(s.s[i],2))).join('')}
-   ${row('Rainfall',fmt(s.raw.rainfall_mm)+' mm/yr')}${row('Land surface temperature',fmt(s.raw.temperature_c,1)+' °C')}${row('NDVI',fmt(s.raw.ndvi,2))}${row('Surface-water occurrence',fmt(s.raw.water_occurrence_pct,1)+'%')}</dl>`:'<p class="hint">Not built yet.</p>'}
+   ${row('Rainfall',fmt(s.raw.rainfall_mm)+' mm/yr')}${row('Land surface temperature',fmt(s.raw.temperature_c,1)+' °C')}${row('NDVI',fmt(s.raw.ndvi,2))}${row('Surface water within 1 km',fmt(s.raw.water_density_pct,1)+'% of land')}</dl>`:'<p class="hint">Not built yet.</p>'}
   <h3>Observed burden, 2023</h3><dl>${row('RDT positivity, all ages',pct(b.tpr,1))}${row('Under 5',pct(b.tpr_u5,1))}${row('5 and over',pct(b.tpr_o5,1))}
    ${row('Tested by RDT / positive',fmt(b.tested)+' / '+fmt(b.pos))}${row('Uncomplicated cases',fmt(b.unc))}</dl>
    ${b.flags.length?'<p><span class="tag">Data check</span> <span class="hint">RDT positives and uncomplicated cases differ by more than 20%.</span></p>':''}
@@ -260,7 +260,7 @@ function method(){
    <li><b>Rainfall</b>: CHIRPS annual total, scaled between the state 2nd and 98th percentiles; more rain scores higher.</li>
    <li><b>Temperature</b>: MODIS daytime land-surface temperature, scored with a thermal-suitability curve that peaks near 25 °C and falls to zero at about 16 °C and 34 °C (Mordecai et al., 2013).</li>
    <li><b>NDVI</b>: MODIS MOD13Q1 annual mean, scaled between the 2nd and 98th percentiles; greener scores higher.</li>
-   <li><b>Surface water</b>: JRC Global Surface Water. Score falls linearly with distance to water (occurrence of 10% or more) up to 5 km. Permanent water bodies (50% or more) are masked out.</li>
+   <li><b>Surface water</b>: JRC Global Surface Water (any occurrence of 1% or more) plus mapped streams (MERIT Hydro, upstream area above 2 km²). The score is the share of land within 1 km that is water, scaled between the state 2nd and 98th percentiles. Permanent water bodies (50% or more) are masked out.</li>
    <li><b>Topographic wetness (TWI)</b>: derived from MERIT Hydro; wetter terrain scores higher.</li>
   </ul>
   <p>Classes (low, moderate, high) are equal thirds of the state's 2nd to 98th percentile suitability range. They are relative, not absolute.</p>
@@ -268,12 +268,12 @@ function method(){
   <p><b>RDT test positivity</b> = persons testing positive by RDT ÷ fever patients tested by RDT, 2023, Ministry of Health, Akwa Ibom State. Age groups are combined by summing counts. Uncomplicated cases per 1,000 uses WorldPop 2020 and is approximate. Severe, clinically diagnosed and microscopy columns are not used because they are incomplete or overlap with RDT results.</p>
   <p>LGAs where RDT positives and uncomplicated cases differ by more than 20%: ${flags}.</p>
   <h3>3. Health-facility access</h3>
-  <p>GRID3 Nigeria health facilities v2.0 (NHFR 2024), all levels, assigned to LGAs by location. Distances are straight-line (no road network). The population beyond ${S?S.access_threshold_km:5} km uses WorldPop 2020.</p>
+  <p>GRID3 Nigeria health facilities v2.0 (NHFR 2024), all levels, assigned to LGAs by location. Distances are straight-line (no road network). The population beyond ${S?S.access_threshold_km:2} km uses WorldPop 2020.</p>
   <h3>4. Limits to keep in mind</h3>
   <ul>
    <li>Suitability is a habitat indicator. It is not a measure of infection or risk, and it ignores interventions, housing and behaviour.</li>
    <li>Case data are facility-reported. Under-reporting is likely where access is poor, so low burden there can mean missed cases.</li>
-   <li>Layer years are ${S?S.year:2023} to match the case year; population is WorldPop 2020. Surface-water distance includes coastal and river water.</li>
+   <li>Layer years are ${S?S.year:2023} to match the case year; population is WorldPop 2020. Surface water includes coastal and river water.</li>
    <li>Relationships in the equal-weight model (for example, that more rainfall always raises suitability) are simplifications to be reviewed with entomology experts.</li>
   </ul>
   <h3>5. Data files and rebuilding</h3>
