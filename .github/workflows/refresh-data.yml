@@ -3,7 +3,8 @@ name: Refresh Earth Engine data
 on:
   workflow_dispatch:
   push:
-    paths: ['weights.json', 'config.json', 'data/cases_2024.csv', 'scripts/build_data.py']
+    paths: ['config.json', 'data/akwa_ibom_lga_malaria_2023.*', 'data/grid3_health_facilities.geojson',
+            'scripts/build_data.py', 'scripts/build_burden.py']
   schedule:
     - cron: '0 3 1 * *'   # monthly; the underlying layers are annual, so this is plenty
 
@@ -24,10 +25,12 @@ jobs:
           EE_PROJECT: ${{ secrets.EE_PROJECT }}
           EE_SERVICE_ACCOUNT_JSON: ${{ secrets.EE_SERVICE_ACCOUNT_JSON }}
         run: python scripts/build_data.py
+      - name: Build burden and facility counts
+        run: python scripts/build_burden.py
       - name: Commit refreshed data
         run: |
           git config user.name  "ee-data-bot"
           git config user.email "ee-data-bot@users.noreply.github.com"
-          git add data/akwa_ibom_mvi.json data/akwa_ibom_lga.geojson
+          git add data/akwa_ibom_suitability.json data/akwa_ibom_burden.json
           git diff --cached --quiet || git commit -m "Refresh Earth Engine data"
           git push

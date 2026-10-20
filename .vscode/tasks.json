@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Inspect 2023 case workbook",
+			"type": "shell",
+			"command": "C:/Users/ACER/AppData/Local/Programs/Python/Python314/python.exe",
+			"args": [
+				"-c",
+				"import zipfile,xml.etree.ElementTree as E; p=r'data/malaria_cases_akwa_ibom_2023.xlsx'; z=zipfile.ZipFile(p); n={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}; ss=[]; root=E.fromstring(z.read('xl/sharedStrings.xml')) if 'xl/sharedStrings.xml' in z.namelist() else None; ss=[''.join(t.text or '' for t in si.findall('.//m:t',n)) for si in root.findall('m:si',n)] if root is not None else []; sh=E.fromstring(z.read('xl/worksheets/sheet1.xml')); print('SHEETS'); print(z.read('xl/workbook.xml').decode('utf-8')[:1500]); print('ROWS'); [(lambda cells: print(row.attrib.get('r','?')+'\\t'+'\\t'.join(((ss[int(c.find('m:v',n).text)] if c.attrib.get('t')=='s' else c.find('m:v',n).text) if c.find('m:v',n) is not None else ''.join(t.text or '' for t in c.findall('.//m:t',n))) for c in cells)))(row.findall('m:c',n)) for row in sh.findall('.//m:sheetData/m:row',n)]"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

@@ -1,11 +1,16 @@
 {
-  "year": 2024,
+  "year": 2023,
   "scale_m": 100,
   "crs": "EPSG:32632",
   "distance_cap_m": 5000,
-  "lga_asset": null,
-  "lga_name_field": "ADM2_NAME",
-  "roads_asset": null,
-  "facilities_asset": null,
-  "cases_csv": "data/cases_2024.csv"
+  "access_threshold_km": 5,
+  "lga_geojson": "data/akwa_ibom_lga_malaria_2023.geojson",
+  "facilities_geojson": "data/grid3_health_facilities.geojson",
+  "weights": {
+    "rainfall": 0.2,
+    "temperature": 0.2,
+    "ndvi": 0.2,
+    "surface_water": 0.2,
+    "twi": 0.2
+  }
 }

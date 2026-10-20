@@ -1,780 +1,287 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Akwa Ibom Malaria Vulnerability Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Akwa Ibom Malaria Habitat Suitability and Risk Maps</title>
 <style>
-:root{
-  --bg:#f5f7f3;--panel:#ffffff;--ink:#17261e;--muted:#5b6a61;--line:#dde3da;--accent:#1f6f4a;--accent-ink:#ffffff;
-  --high:#c0392b;--med:#e3a92f;--low:#2e8b57;--soft:#eef3ec;--warn-bg:#fff4d6;--warn-ink:#6b4b00;
-  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0e1612;--panel:#16211b;--ink:#e6efe8;--muted:#9bada2;--line:#27362d;--accent:#4cc38a;--accent-ink:#06130c;
-    --high:#ef6c5b;--med:#efc258;--low:#52c58a;--soft:#1b2a22;--warn-bg:#3a2f0c;--warn-ink:#f1d98a;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0e1612;--panel:#16211b;--ink:#e6efe8;--muted:#9bada2;--line:#27362d;--accent:#4cc38a;--accent-ink:#06130c;
-  --high:#ef6c5b;--med:#efc258;--low:#52c58a;--soft:#1b2a22;--warn-bg:#3a2f0c;--warn-ink:#f1d98a;
-}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{--ink:#1d2a33;--muted:#5d6b75;--line:#dde3e8;--bg:#f5f7f9;--card:#fff;--accent:#0b6e4f;--warn:#b45309}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-header{padding:20px 20px 8px;max-width:1280px;margin:0 auto}
-h1{font-size:1.5rem;margin:0 0 2px}
-.sub{color:var(--muted);margin:0;font-size:.9rem}
-.bar{max-width:1280px;margin:0 auto;padding:8px 20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-button,.btn,select,input[type=number],input[type=text]{font:inherit;color:var(--ink)}
-button,.btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
-button:hover,.btn:hover{border-color:var(--accent)}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.tabs{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
-.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:10px 14px;color:var(--muted)}
-.tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
-main{max-width:1280px;margin:0 auto;padding:16px 20px 40px}
-.tab{display:none}.tab.on{display:block}
-.grid{display:grid;gap:14px}
-.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-.g2{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
-@media (max-width:520px){.g2{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
-.card h3{margin:0 0 4px;font-size:1rem}
-.card .hint{color:var(--muted);font-size:.8rem;margin:0 0 10px}
-.kpi .v{font-size:1.7rem;font-weight:700;line-height:1.1}
-.kpi .l{color:var(--muted);font-size:.8rem}
-.scroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:.85rem}
-th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
-td input{width:90px;text-align:right;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
-.note{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:.88rem}
-.empty{text-align:center;padding:48px 16px;color:var(--muted)}
-.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;background:var(--soft);color:var(--muted)}
-.ok{color:var(--low);font-weight:600}.bad{color:var(--high);font-weight:600}
-pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;max-height:560px;font-size:.78rem;line-height:1.45}
-svg text{fill:var(--ink);font-family:inherit}
-.muted{color:var(--muted)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.mx td,.mx th{padding:2px 3px;text-align:center}
-.mx select{font-size:.75rem;padding:1px 0;background:var(--soft);border:1px solid var(--line);border-radius:5px;max-width:52px}
-.mx td.rc{color:var(--muted);font-size:.75rem}
-.mx th.rl,.mx td.rl{text-align:left;white-space:nowrap;position:sticky;left:0;background:var(--panel)}
-footer{max-width:1280px;margin:0 auto;padding:16px 20px 28px;color:var(--muted);font-size:.8rem;border-top:1px solid var(--line)}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
-.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+body{margin:0;font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:#0f2a37;color:#fff;padding:14px 20px}
+header h1{margin:0;font-size:20px}
+header p{margin:2px 0 8px;color:#b9cad4;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#1d4254;border-radius:12px;padding:2px 10px;font-size:12px}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 20px 0;background:#fff;border-bottom:1px solid var(--line)}
+nav button{border:0;background:none;padding:10px 14px;font:inherit;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent}
+nav button[aria-selected=true]{color:var(--accent);border-color:var(--accent);font-weight:600}
+main{padding:16px 20px;max-width:1300px;margin:0 auto}
+.grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}header,main,nav{padding-left:12px;padding-right:12px}}
+.scroll,.card{overflow-x:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px}
+.card h2{margin:0 0 6px;font-size:16px}
+.card h3{margin:14px 0 4px;font-size:14px}
+.hint{color:var(--muted);font-size:13px;margin:4px 0}
+.notice{background:#fff8e6;border:1px solid #f1d38a;border-radius:6px;padding:8px 10px;font-size:13px;margin:8px 0}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;max-width:100%}
+svg{width:100%;height:auto;display:block}
+.lga{stroke:#fff;stroke-width:.4;cursor:pointer}
+.lga:hover,.lga.sel{stroke:#000;stroke-width:1.2}
+.legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:6px}
+.ramp{height:10px;flex:1;max-width:240px;border-radius:5px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.row{cursor:pointer}tr.row:hover,tr.row.sel{background:#eef6f2}
+.bar{display:inline-block;height:8px;background:var(--accent);border-radius:4px;vertical-align:middle}
+.scroll{max-height:520px;overflow:auto}
+dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:6px 0;font-size:13px}
+dt{color:var(--muted)}dd{margin:0;text-align:right}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:#fde8d0;color:#8a4a00}
+.q{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.method p,.method li{max-width:80ch}
+code{background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:12.5px}
+footer{padding:16px 20px;color:var(--muted);font-size:12px;text-align:center}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <header>
-  <h1>Akwa Ibom Malaria Vulnerability Dashboard</h1>
-  <p class="sub">AHP–WLC environmental suitability index and population exposure by LGA &middot; method adapted from Abbah et&nbsp;al. (2026), <i>Discover Public Health</i> 23:551 (Bayelsa State)</p>
+  <h1>Akwa Ibom malaria habitat suitability and risk maps</h1>
+  <p>Where conditions favour Anopheles habitat, where malaria is observed, and who can reach care.</p>
+  <div class="chips" id="chips"></div>
 </header>
-
-<div class="bar">
-  <span id="status" class="pill">No data loaded</span>
-  <details style="flex:1"><summary class="muted" style="cursor:pointer;font-size:.85rem">Load your own data / demo</summary>
-  <div class="row" style="margin-top:6px">
-  <label class="btn">Load zonal CSV<input id="fCsv" type="file" accept=".csv,text/csv" hidden></label>
-  <label class="btn">Load LGA GeoJSON (optional, for map)<input id="fGeo" type="file" accept=".geojson,.json" hidden></label>
-  <button id="bDemo">Load synthetic demo</button>
-  <button id="bTpl">Download CSV template</button>
-  </div></details>
-</div>
-
-<nav class="tabs" id="tabs">
-  <button data-t="over" class="on">Overview</button>
-  <button data-t="run">Run analysis</button>
-  <button data-t="ahp">AHP weights</button>
-  <button data-t="val">Validation &amp; sensitivity</button>
-  <button data-t="gee">Earth Engine script</button>
-  <button data-t="about">Workflow &amp; notes</button>
+<nav role="tablist" id="tabs">
+  <button role="tab" data-t="suit" aria-selected="true">Habitat suitability</button>
+  <button role="tab" data-t="burden" aria-selected="false">Observed burden (2023)</button>
+  <button role="tab" data-t="access" aria-selected="false">Health-facility access</button>
+  <button role="tab" data-t="plan" aria-selected="false">Planning view</button>
+  <button role="tab" data-t="method" aria-selected="false">Method and data</button>
 </nav>
-
 <main>
-<!-- OVERVIEW -->
-<section class="tab on" id="t-over">
-  <div id="demoBanner" class="note" style="display:none"><b>Synthetic demo data.</b> These numbers are randomly generated to show the layout. They are not Akwa Ibom results.</div>
-  <div id="buildNote" class="muted" style="display:none;font-size:.82rem;margin:0 0 10px"></div>
-  <div id="overEmpty" class="empty card">
-    <h3>No results loaded</h3>
-    <p>Data is loaded automatically from <code>data/akwa_ibom_mvi.json</code>, which the Earth Engine build job produces (see README). If this page is open without that file, use <b>Load your own data / demo</b> above.</p>
-  </div>
-  <div id="overBody" style="display:none">
-    <div class="grid g4" id="kpis"></div>
-    <div class="grid g2" style="margin-top:14px">
-      <div class="card"><h3>LGA vulnerability ranking</h3><p class="hint">Mean MVI per LGA from the live AHP weights (higher = more environmentally suitable for transmission).</p><div id="rank"></div></div>
-      <div class="card"><h3>Map</h3>
-        <div class="row" style="margin-bottom:6px"><select id="mapMetric"><option value="mvi">MVI (mean)</option><option value="shH">% population in high class</option><option value="inc">Incidence per 1,000</option></select></div>
-        <div id="map"></div></div>
-    </div>
-    <div class="grid g2" style="margin-top:14px">
-      <div class="card"><h3>Population exposure by class</h3>
-        <p class="hint">Share of each LGA's population living in high / medium / low vulnerability zones, sorted by MVI.</p>
-        <div class="legend"><span><i style="background:var(--high)"></i>High</span><span><i style="background:var(--med)"></i>Medium</span><span><i style="background:var(--low)"></i>Low</span></div>
-        <div id="stack"></div></div>
-      <div class="card"><h3>Ecology vs. access (two-layer view)</h3>
-        <p class="hint">The paper's main recommendation: pair ecological suitability with health-system access. Top-right = high suitability and poor access to facilities and roads. Bubble = population.</p>
-        <div id="quad"></div></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <div class="row" style="justify-content:space-between"><h3>LGA table</h3><button id="bExport">Download table (CSV)</button></div>
-      <p class="hint">Enter 2024 confirmed cases from DHIS2 in the editable column to compute incidence and unlock validation.</p>
-      <div class="scroll"><table id="tbl"></table></div>
-    </div>
-  </div>
-</section>
-
-<!-- RUN ANALYSIS -->
-<section class="tab" id="t-run">
-  <div id="runOff" class="note" style="display:none">The analysis app is not connected yet. Set <code>window.MVI_APP</code> in <code>site-config.js</code> to your published Earth Engine App URL.</div>
-  <div id="runForm">
-    <div class="card">
-      <h3>Run a vulnerability analysis</h3>
-      <p class="hint">Choose an area and a period. The service runs the model in Google Earth Engine on your current AHP weights (see the AHP tab) and returns statistics and GeoTIFF rasters. Typical runs take a few minutes; the same settings run again are served from cache.</p>
-      <div class="row" style="gap:16px;align-items:flex-end">
-        <label>Area<br><select id="runLga"><option value="ALL">All of Akwa Ibom</option></select></label>
-        <label>Start<br><input type="date" id="runStart"></label>
-        <label>End<br><input type="date" id="runEnd"></label>
-        <button class="primary" id="runBtn">Run analysis</button>
+  <div id="view-map">
+    <div class="grid">
+      <section class="card">
+        <h2 id="mapTitle"></h2>
+        <p class="hint" id="mapDesc"></p>
+        <div class="controls">
+          <label>Show <select id="metric"></select></label>
+          <label><input type="checkbox" id="showFac"> Health facilities</label>
+        </div>
+        <div id="notice"></div>
+        <svg id="map" viewBox="0 0 100 100" role="img" aria-label="Map of Akwa Ibom local government areas"></svg>
+        <div class="legend" id="legend"></div>
+      </section>
+      <div>
+        <section class="card" id="detail"></section>
+        <section class="card">
+          <h2>LGA ranking</h2>
+          <div class="scroll"><table id="rank"></table></div>
+        </section>
       </div>
-      <div class="row" style="margin-top:10px">
-        <span class="muted" style="font-size:.85rem">Presets:</span>
-        <select id="runYear" aria-label="Preset year"></select>
-        <button data-preset="year">Full year</button>
-        <button data-preset="wet">Wet season (Apr–Oct)</button>
-        <button data-preset="dry">Dry season (Nov–Mar)</button>
-        <button data-preset="last12">Last 12 months</button>
-      </div>
-      <p class="muted" style="font-size:.8rem;margin:10px 0 0">Periods must be 30 days to about 3 years, from 2016 to about 6 weeks ago (satellite rainfall and vegetation data lag). Population is WorldPop 2020 for every period.</p>
-      <div id="runMsg" style="margin-top:10px"></div>
     </div>
-    <div id="runOut" style="display:none;margin-top:14px"></div>
+    <section class="card" id="extra" hidden></section>
   </div>
-</section>
-
-<!-- AHP -->
-<section class="tab" id="t-ahp">
-  <div class="grid g2">
-    <div class="card">
-      <h3>Criterion weights</h3>
-      <p class="hint">Principal eigenvector of the pairwise matrix. Tick marks show the weights published for Bayelsa (Table 3).</p>
-      <div class="row" style="margin-bottom:8px">
-        <button id="pPaper">Paper matrix (Bayelsa)</button>
-        <button id="pEqual">Equal weights</button>
-        <button id="pDl">Download weights.json</button>
-      </div>
-      <div id="wbars"></div>
-      <div id="cr" style="margin-top:10px"></div>
-    </div>
-    <div class="card">
-      <h3>Pairwise comparison matrix (Saaty 1–9)</h3>
-      <p class="hint">Row criterion vs. column criterion: 9 = row far more important; 1/9 = column far more important. Only the upper triangle is editable; the lower triangle is reciprocal by construction. Re-elicit these judgements for Akwa Ibom with local entomology/vector-control experts.</p>
-      <div class="scroll"><table class="mx" id="mx"></table></div>
-    </div>
-  </div>
-</section>
-
-<!-- VALIDATION -->
-<section class="tab" id="t-val">
-  <div id="valEmpty" class="empty card">Load LGA results (and enter cases) to see validation.</div>
-  <div id="valBody" style="display:none">
-    <div class="grid g2">
-      <div class="card"><h3>Ecological concordance with reported incidence</h3>
-        <p class="hint">Rates, not counts. Counts mostly track population size; the Bayelsa paper flagged this as a limitation. With ~31 LGAs treat every result as hypothesis-generating (ecological inference, MAUP, DHIS2 reporting completeness).</p>
-        <div id="corr"></div></div>
-      <div class="card"><h3>MVI vs incidence per 1,000</h3><div id="scatter"></div></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h3>Weight sensitivity (Monte Carlo)</h3>
-      <p class="hint">Each AHP weight is multiplied by a log-normal factor, weights are renormalised, and LGAs are re-ranked 1,000 times. Bars show the 5th–95th percentile rank; the dot is the baseline rank (1 = most vulnerable).</p>
-      <div class="row" style="margin-bottom:8px"><label>Perturbation (σ of log-weight): <input type="range" id="sig" min="0.1" max="0.8" step="0.05" value="0.3"> <b id="sigV">0.30</b></label></div>
-      <div id="sens"></div>
-    </div>
-  </div>
-</section>
-
-<!-- GEE -->
-<section class="tab" id="t-gee">
-  <div class="card">
-    <h3>Google Earth Engine script (Akwa Ibom, 31 LGAs)</h3>
-    <p class="hint">Manual alternative to the automated build (scripts/build_data.py does the same thing through the API with no copy-paste). Generated from the current AHP weights. The CSV contains area-weighted mean criterion scores per LGA, plus area and population per vulnerability class; load it here.</p>
-    <div class="row" style="margin-bottom:8px"><button class="primary" id="gCopy">Copy script</button><button id="gDl">Download .js</button><span id="gMsg" class="muted"></span></div>
-    <pre id="gee"></pre>
-  </div>
-</section>
-
-<!-- ABOUT -->
-<section class="tab" id="t-about">
-  <div class="grid g2">
-    <div class="card">
-      <h3>Workflow</h3>
-      <ol>
-        <li>Set the weights on the <b>AHP weights</b> tab (start from the Bayelsa matrix, then re-elicit for Akwa Ibom).</li>
-        <li>Copy the script from the <b>Earth Engine</b> tab. Add your OSM roads and GRID3 facilities assets (or leave them <code>null</code> and their weight is redistributed).</li>
-        <li>Run the two exports, download the CSV and GeoJSON from Drive.</li>
-        <li>Load both files here. Enter DHIS2 2024 confirmed cases per LGA in the table.</li>
-        <li>Change weights freely: LGA mean MVI, ranks, sensitivity and quadrants update instantly because a weighted linear combination of layer means equals the mean of the combination. Pixel classes and class populations only change when you re-run the script.</li>
-      </ol>
-    </div>
-    <div class="card">
-      <h3>What differs from the Bayelsa paper</h3>
-      <ul>
-        <li>Score direction flipped: <b>1 = most vulnerable</b>, so higher MVI means higher suitability/exposure.</li>
-        <li>Classes use equal intervals on the 2nd–98th percentile range, so outlier pixels don't stretch the bins.</li>
-        <li>Validation uses incidence per 1,000, Spearman as well as Pearson, Benjamini–Hochberg adjustment, and a weight-perturbation sensitivity analysis (the paper lists these as future work).</li>
-        <li>Health-system access is shown as a second axis instead of being folded into one index.</li>
-        <li>UTM zone 32N (EPSG:32632) fits Akwa Ibom (about 7–8.2°E).</li>
-        <li>Open datasets: Dynamic World LULC, MERIT Hydro (streams and TWI), CHIRPS, MODIS, WorldPop 2020, FAO GAUL LGAs.</li>
-        <li>The pairwise matrix is rebuilt from the published upper triangle with exact reciprocals; the published lower triangle is not perfectly reciprocal, so weights can differ slightly from Table 3.</li>
-      </ul>
-    </div>
-  </div>
-</section>
+  <section class="card method" id="view-method" hidden></section>
 </main>
+<footer>Suitability describes habitat conditions, not disease risk. Observed burden is facility-reported and approximate. See Method and data.</footer>
 
-<footer>
-  <div>Weights, class populations and incidence are model outputs from secondary data: interpret as area-level patterns, not individual risk.</div>
-  <div>&copy; <span id="yr"></span> Ecosynthra Lab</div>
-</footer>
-
-<script src="site-config.js"></script>
 <script>
-/* ---------- constants ---------- */
-const CRIT=[
- {k:'stream',n:'Distance to stream'},{k:'wetland',n:'Distance to wetland'},{k:'precip',n:'Precipitation'},
- {k:'twi',n:'Topographic wetness index'},{k:'lst',n:'Land surface temperature'},{k:'cropland',n:'Distance from cropland'},
- {k:'elev',n:'Elevation'},{k:'slope',n:'Slope'},{k:'ndvi',n:'NDVI'},{k:'health',n:'Distance to health facilities'},
- {k:'road',n:'Distance to roads'},{k:'builtup',n:'Distance from built-up'},{k:'bare',n:'Distance from bare ground'}];
-const PAPER_W=[0.2186,0.1999,0.1288,0.0991,0.082,0.0686,0.0492,0.0321,0.0321,0.0261,0.0261,0.0261,0.0112];
-const PAPER_UP=[
- [1,3,3,3,5,5,7,7,7,7,7,9],[3,3,3,3,5,5,5,7,7,7,9],[1,3,3,3,5,5,5,5,5,9],[1,1,3,3,3,5,5,5,9],
- [1,3,3,3,3,3,3,9],[1,3,3,3,3,3,9],[1,1,3,3,3,5],[1,1,1,1,5],[1,1,1,5],[1,1,3],[1,3],[3],[]];
-const RI={1:0,2:0,3:.58,4:.9,5:1.12,6:1.24,7:1.32,8:1.41,9:1.45,10:1.49,11:1.51,12:1.48,13:1.56};
-const LGA_NAMES=['Abak','Eastern Obolo','Eket','Esit Eket','Essien Udim','Etim Ekpo','Etinan','Ibeno','Ibesikpo Asutan','Ibiono Ibom','Ika','Ikono','Ikot Abasi','Ikot Ekpene','Ini','Itu','Mbo','Mkpat Enin','Nsit Atai','Nsit Ibom','Nsit Ubium','Obot Akara','Okobo','Onna','Oron','Oruk Anam','Udung Uko','Ukanafun','Uruan','Urue-Offong/Oruko','Uyo'];
-const COASTAL=['Eastern Obolo','Eket','Esit Eket','Ibeno','Ikot Abasi','Mbo','Mkpat Enin','Okobo','Onna','Oron','Udung Uko','Urue-Offong/Oruko'];
-
+(async function(){
 const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const fmt=x=>isFinite(x)?Math.round(x).toLocaleString():'–';
-const f1=x=>isFinite(x)?x.toFixed(1):'–';
-const f3=x=>isFinite(x)?x.toFixed(3):'–';
-const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-$('#yr').textContent=new Date().getFullYear();
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=(v,d=0)=>v==null||isNaN(v)?'n/a':Number(v).toLocaleString('en',{maximumFractionDigits:d,minimumFractionDigits:d});
+const pct=(v,d=0)=>v==null?'n/a':fmt(v*100,d)+'%';
+const getJSON=async u=>{try{const r=await fetch(u,{cache:'no-cache'});return r.ok?await r.json():null}catch(_){return null}};
 
-/* ---------- AHP ---------- */
-function buildA(up){const n=13,A=Array.from({length:n},()=>Array(n).fill(1));
- for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const v=up[i][j-i-1];A[i][j]=v;A[j][i]=1/v;}return A;}
-function ahp(A){const n=A.length;let w=Array(n).fill(1/n);
- for(let it=0;it<500;it++){const v=A.map(r=>r.reduce((a,x,j)=>a+x*w[j],0));const s=v.reduce((a,b)=>a+b,0);w=v.map(x=>x/s);}
- const Aw=A.map(r=>r.reduce((a,x,j)=>a+x*w[j],0));const lam=Aw.reduce((a,x,i)=>a+x/w[i],0)/n;
- const CI=(lam-n)/(n-1);return{w,lam,CI,CR:CI/RI[n]};}
-let A=buildA(PAPER_UP),W=ahp(A).w,AHPR=ahp(A);
-function recompute(){AHPR=ahp(A);W=AHPR.w;}
+const [B,GEO,S]=await Promise.all([
+  getJSON('data/akwa_ibom_burden.json'),
+  getJSON('data/akwa_ibom_lga_malaria_2023.geojson'),
+  getJSON('data/akwa_ibom_suitability.json')]);
+if(!B||!GEO){$('main').innerHTML='<div class="card">Could not load data/akwa_ibom_burden.json or the LGA boundaries.</div>';return}
 
-/* ---------- state ---------- */
-let D=null,GEO=null,SIG=0.3;
+const LAYERS={rainfall:'Rainfall',temperature:'Temperature',ndvi:'NDVI (vegetation)',surface_water:'Surface water',twi:'Topographic wetness (TWI)'};
+const LKEYS=Object.keys(LAYERS);
+const byCode={};
+B.rows.forEach(r=>byCode[r.pcode]={b:r,s:null,name:r.name});
+if(S)S.rows.forEach(r=>{if(byCode[r.pcode])byCode[r.pcode].s=r});
+const ROWS=Object.values(byCode);
+const popOf=d=>d.s?d.s.pop_total:null;
+const beyondShare=d=>d.s&&d.s.pop_total?d.s.access.pop_beyond/d.s.pop_total:null;
 
-/* ---------- csv ---------- */
-function parseCSV(t){const rows=[];let row=[],f='',q=false;
- for(let i=0;i<t.length;i++){const c=t[i];
-  if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
-  else if(c==='"')q=true;else if(c===','){row.push(f);f=''}
-  else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);f='';if(row.length>1||row[0]!=='')rows.push(row);row=[]}
-  else f+=c}
- if(f!==''||row.length){row.push(f);rows.push(row)}return rows;}
-const COLS=['lga',...CRIT.map(c=>'s_'+c.k),'pop_high','pop_med','pop_low','area_high_km2','area_med_km2','area_low_km2','cases_2024'];
-function loadCSV(text,demo){
- const R=parseCSV(text.replace(/^\uFEFF/,''));if(R.length<2){alert('CSV looks empty.');return;}
- const H=R[0].map(h=>h.trim().toLowerCase());const ix=n=>H.indexOf(n);
- if(ix('lga')<0){alert('CSV needs an "lga" column. Use the template.');return;}
- const num=(r,n)=>{const i=ix(n);if(i<0)return 0;const v=parseFloat(r[i]);return isFinite(v)?v:0;};
- const rows=R.slice(1).filter(r=>(r[ix('lga')]||'').trim()).map(r=>{
-  const ci=ix('cases_2024')>=0?ix('cases_2024'):ix('cases');const cv=ci>=0?parseFloat(r[ci]):NaN;
-  return{name:r[ix('lga')].trim(),s:CRIT.map(c=>num(r,'s_'+c.k)),ph:num(r,'pop_high'),pm:num(r,'pop_med'),pl:num(r,'pop_low'),
-   pop_total:num(r,'pop_total'),ah:num(r,'area_high_km2'),am:num(r,'area_med_km2'),al:num(r,'area_low_km2'),cases:isFinite(cv)?cv:null};});
- D={rows,demo:!!demo};setStatus();renderAll();
-}
-function setStatus(){const el=$('#status');
- el.textContent=D?(D.rows.length+' LGAs'+(D.demo?' · synthetic demo':'')+(D.build?' · data built '+String(D.build.generated||'').slice(0,10):'')+(GEO?' · map loaded':'')):'No data loaded';}
-function loadJSON(o){
- D={rows:o.rows.map(r=>({name:r.name,s:r.s,ph:r.ph||0,pm:r.pm||0,pl:r.pl||0,pop_total:r.pop_total||0,ah:r.ah||0,am:r.am||0,al:r.al||0,cases:r.cases==null?null:r.cases})),demo:false,build:o};
- setStatus();renderAll();}
-async function autoload(){
- try{const r=await fetch('data/akwa_ibom_mvi.json',{cache:'no-cache'});if(!r.ok)throw 0;const o=await r.json();
-  try{const g=await fetch('data/akwa_ibom_lga.geojson');if(g.ok)GEO=await g.json();}catch(_){}
-  loadJSON(o);}catch(_){}
-}
-$('#fCsv').addEventListener('change',e=>{const f=e.target.files[0];if(f)f.text().then(t=>loadCSV(t,false));e.target.value='';});
-$('#fGeo').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{GEO=JSON.parse(t);if(!GEO.features)throw 0;setStatus();renderAll();}catch(_){alert('Could not read that GeoJSON.');}});e.target.value='';});
-$('#bTpl').onclick=()=>dl('akwa_ibom_mvi_template.csv',COLS.join(',')+'\n','text/csv');
-function dl(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+// metric registry: value, format, which tab it belongs to
+const M={
+ suit:{tab:'suit',label:'Combined suitability (5 layers, equal weights)',f:d=>d.s?.suit,fmt:v=>fmt(v,2),need:'s',lo:'Lower suitability',hi:'Higher suitability'},
+ ...Object.fromEntries(LKEYS.map((k,i)=>['l_'+k,{tab:'suit',label:LAYERS[k]+' score',f:d=>d.s?.s[i],fmt:v=>fmt(v,2),need:'s',lo:'Lower score',hi:'Higher score'}])),
+ tpr:{tab:'burden',label:'RDT test positivity, all ages',f:d=>d.b.tpr,fmt:v=>pct(v,1),lo:'Lower positivity',hi:'Higher positivity'},
+ tpr_u5:{tab:'burden',label:'RDT test positivity, under 5',f:d=>d.b.tpr_u5,fmt:v=>pct(v,1),lo:'Lower positivity',hi:'Higher positivity'},
+ tpr_o5:{tab:'burden',label:'RDT test positivity, 5 and over',f:d=>d.b.tpr_o5,fmt:v=>pct(v,1),lo:'Lower positivity',hi:'Higher positivity'},
+ unc1k:{tab:'burden',label:'Uncomplicated cases per 1,000 people (approx.)',f:d=>popOf(d)?d.b.unc/popOf(d)*1000:null,fmt:v=>fmt(v,0),need:'s',lo:'Fewer',hi:'More'},
+ beyond:{tab:'access',label:'Population living beyond the distance threshold',f:beyondShare,fmt:v=>pct(v,0),need:'s',lo:'Better access',hi:'Poorer access'},
+ dist:{tab:'access',label:'Population-weighted distance to nearest facility (km)',f:d=>d.s?.access.pop_weighted_dist_km,fmt:v=>fmt(v,1),need:'s',lo:'Closer',hi:'Farther'},
+ fac100:{tab:'access',label:'Facilities per 100 km²',f:d=>d.b.fac_per_100km2,fmt:v=>fmt(v,1),inv:true,lo:'More facilities',hi:'Fewer facilities'},
+ fac10k:{tab:'access',label:'Facilities per 10,000 people (approx.)',f:d=>popOf(d)?d.b.fac.total/popOf(d)*1e4:null,fmt:v=>fmt(v,1),need:'s',inv:true,lo:'More facilities',hi:'Fewer facilities'},
+ plan:{tab:'plan',label:'Suitability and access classes',f:null}
+};
+const TABS={
+ suit:{title:'Habitat suitability',desc:'How well local conditions support Anopheles habitat, from rainfall, temperature, NDVI, surface water and topographic wetness (equal weights, provisional). This is not a disease-risk map.',def:'suit'},
+ burden:{title:'Observed malaria burden, 2023',desc:'RDT test positivity from Ministry of Health facility reports: positives divided by fever patients tested by RDT. Independent of the suitability model.',def:'tpr'},
+ access:{title:'Health-facility access',desc:'GRID3 health facilities and the population living beyond the distance threshold. Access is reported separately and never enters the suitability score.',def:'beyond'},
+ plan:{title:'Planning view',desc:'Suitability against access: where habitat is favourable and people are far from care.',def:'plan'}
+};
+let tab='suit',metric='suit',sel=null;
 
-/* ---------- demo (synthetic) ---------- */
-function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
-$('#bDemo').onclick=()=>{
- const r=mulberry(7);const rows=[COLS.join(',')];
- LGA_NAMES.forEach(n=>{const co=COASTAL.includes(n),urb=['Uyo','Ikot Ekpene','Eket','Oron'].includes(n);
-  const g=(a,b)=>a+(b-a)*r();
-  const s=[co?g(.6,.95):g(.2,.6),co?g(.55,.95):g(.2,.6),g(.4,.8),co?g(.5,.9):g(.3,.7),g(.55,.85),g(.3,.8),co?g(.7,.98):g(.4,.8),co?g(.7,.98):g(.5,.9),g(.4,.8),
-   co?g(.5,.9):g(.1,.5),co?g(.4,.9):g(.1,.5),urb?g(.05,.2):g(.3,.8),g(.4,.9)];
-  const pop=Math.round(urb?g(250e3,500e3):g(70e3,260e3));const hi=co?g(.06,.2):g(.0,.04),lo=urb?g(.25,.4):g(.08,.22);
-  const ph=pop*hi,pl=pop*lo,pm=pop-ph-pl;const area=g(250,900);
-  const cases=Math.round(pop*g(.04,.12)*(urb?1.5:1));
-  rows.push([ '"'+n+'"',...s.map(x=>x.toFixed(4)),ph.toFixed(0),pm.toFixed(0),pl.toFixed(0),(area*hi).toFixed(1),(area*(1-hi-lo)).toFixed(1),(area*lo).toFixed(1),cases].join(','));});
- GEO=null;loadCSV(rows.join('\n'),true);};
+// ---- map geometry (equirectangular with cos(lat) correction)
+const feats=GEO.features;
+let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+const rings=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates;
+feats.forEach(f=>rings(f.geometry).forEach(p=>p[0].forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)})));
+const k=Math.cos((y0+y1)/2*Math.PI/180),W=100,H=(y1-y0)/((x1-x0)*k)*W;
+const px=x=>(x-x0)*k/((x1-x0)*k)*W,py=y=>(y1-y)/(y1-y0)*H;
+const pathOf=g=>rings(g).map(p=>p.map(r=>'M'+r.map(([x,y])=>px(x).toFixed(2)+' '+py(y).toFixed(2)).join('L')+'Z').join('')).join('');
+$('#map').setAttribute('viewBox',`0 0 ${W} ${H.toFixed(1)}`);
 
-/* ---------- stats ---------- */
-const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
-function pearson(x,y){const n=x.length;if(n<3)return NaN;const mx=mean(x),my=mean(y);let sxy=0,sxx=0,syy=0;
- for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2;}return sxy/Math.sqrt(sxx*syy);}
-function ranks(a){const idx=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]);const r=Array(a.length);
- for(let i=0;i<idx.length;){let j=i;while(j+1<idx.length&&idx[j+1][0]===idx[i][0])j++;const avg=(i+j)/2+1;for(let k=i;k<=j;k++)r[idx[k][1]]=avg;i=j+1;}return r;}
-const spearman=(x,y)=>pearson(ranks(x),ranks(y));
-function lgamma(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
- let y=x,t=x+5.5;t-=(x+.5)*Math.log(t);let s=1.000000000190015;for(let j=0;j<6;j++)s+=c[j]/++y;return -t+Math.log(2.5066282746310005*s/x);}
-function betacf(a,b,x){const FP=1e-30;let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<FP)d=FP;d=1/d;let h=d;
- for(let m=1;m<=200;m++){let m2=2*m,aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;h*=d*c;
-  aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<FP)d=FP;c=1+aa/c;if(Math.abs(c)<FP)c=FP;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<3e-12)break;}return h;}
-function ibeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
- return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b;}
-function pFromR(r,n){if(n<4||!isFinite(r))return NaN;if(Math.abs(r)>=1)return 0;const df=n-2,t=r*Math.sqrt(df/(1-r*r));return ibeta(df/(df+t*t),df/2,.5);}
-function bh(ps){const m=ps.length,o=ps.map((p,i)=>[p,i]).sort((a,b)=>a[0]-b[0]),adj=Array(m);let prev=1;
- for(let k=m-1;k>=0;k--){const v=Math.min(prev,o[k][0]*m/(k+1));adj[o[k][1]]=v;prev=v;}return adj;}
+// ---- colour ramp
+const STOPS=[[255,247,188],[254,196,79],[217,95,14],[127,39,4]];
+const ramp=t=>{t=Math.max(0,Math.min(1,t));const s=t*(STOPS.length-1),i=Math.min(Math.floor(s),STOPS.length-2),u=s-i;
+ return 'rgb('+STOPS[i].map((c,j)=>Math.round(c+(STOPS[i+1][j]-c)*u)).join(',')+')'};
+const QCOL={hh:'#b91c1c',hl:'#f59e0b',lh:'#60a5fa',ll:'#d1d5db'};
+const QNAME={hh:'High suitability, poor access',hl:'High suitability, good access',lh:'Lower suitability, poor access',ll:'Lower suitability, good access'};
+const median=a=>{a=a.filter(v=>v!=null).sort((x,y)=>x-y);return a.length?(a[a.length>>1]+a[(a.length-1)>>1])/2:null};
+function quad(d,ms,mb){const s=d.s?.suit,b=beyondShare(d);if(s==null||b==null)return null;return (s>=ms?'h':'l')+(b>=mb?'h':'l')}
 
-/* ---------- derive ---------- */
-function activeIdx(){return CRIT.map((_,i)=>i).filter(i=>D.rows.some(r=>r.s[i]>0));}
-function effW(w){const act=activeIdx(),t=act.reduce((a,i)=>a+w[i],0);return w.map((x,i)=>act.includes(i)?x/t:0);}
-function derive(){
- const w=effW(W);const act=activeIdx();const accIdx=[9,10].filter(i=>act.includes(i));
- D.rows.forEach(r=>{
-  r.mvi=r.s.reduce((a,s,i)=>a+w[i]*s,0);
-  r.popT=r.pop_total>0?r.pop_total:(r.ph+r.pm+r.pl);
-  r.shH=r.ph/r.popT*100;r.shM=r.pm/r.popT*100;r.shL=r.pl/r.popT*100;
-  r.inc=(r.cases!=null&&r.popT>0)?r.cases/r.popT*1000:NaN;
-  r.acc=accIdx.length?mean(accIdx.map(i=>r.s[i])):NaN;});
- const o=[...D.rows].sort((a,b)=>b.mvi-a.mvi);o.forEach((r,i)=>r.rank=i+1);
- D.sorted=o;D.hasAcc=accIdx.length>0;D.w=w;
+function draw(){
+  const m=M[metric],t=TABS[tab];
+  $('#mapTitle').textContent=t.title;$('#mapDesc').textContent=t.desc;
+  const avail=m.need==='s'?!!S:true;
+  $('#notice').innerHTML=avail?'':'<div class="notice">Suitability and population data are not built yet. Run the <b>Refresh Earth Engine data</b> workflow (or <code>python scripts/build_data.py</code>) to create <code>data/akwa_ibom_suitability.json</code>. Burden and facility counts are already available.</div>';
+  let vals=ROWS.map(d=>m.f?m.f(d):null),mn=0,mx=1,ms,mb;
+  if(metric==='plan'){ms=median(ROWS.map(d=>d.s?.suit));mb=median(ROWS.map(beyondShare))}
+  else{const v=vals.filter(x=>x!=null);mn=Math.min(...v);mx=Math.max(...v)}
+  const colour=d=>{
+    if(metric==='plan'){const q=quad(d,ms,mb);return q?QCOL[q]:'#e5e7eb'}
+    let v=m.f(d);if(v==null||!isFinite(mn))return '#e5e7eb';
+    let tt=mx>mn?(v-mn)/(mx-mn):0.5;return ramp(m.inv?1-tt:tt)};
+  const svg=feats.map(f=>{const d=byCode[f.properties.adm2_pcode];
+    return `<path class="lga${sel===d.b.pcode?' sel':''}" data-c="${esc(d.b.pcode)}" d="${pathOf(f.geometry)}" fill="${colour(d)}"><title>${esc(d.name)}${m.f?': '+m.fmt(m.f(d)):''}</title></path>`}).join('');
+  const dots=$('#showFac').checked?B.facilities.map(([x,y,l])=>`<circle cx="${px(x).toFixed(2)}" cy="${py(y).toFixed(2)}" r="${l===2?.9:l===1?.6:.35}" fill="${l===2?'#111':l===1?'#1d4ed8':'#0b6e4f'}" fill-opacity=".8" pointer-events="none"/>`).join(''):'';
+  $('#map').innerHTML=svg+dots;
+  $('#map').querySelectorAll('.lga').forEach(p=>p.onclick=()=>{sel=p.dataset.c;draw()});
+  // legend
+  if(metric==='plan'){
+    $('#legend').innerHTML=Object.keys(QNAME).map(q=>`<span><span class="q" style="background:${QCOL[q]}"></span>${QNAME[q]}</span>`).join(' ')+(S?'':'');
+  }else{
+    const lo=m.inv?mx:mn,hi=m.inv?mn:mx;
+    $('#legend').innerHTML=`<span>${m.lo}${isFinite(lo)?' ('+m.fmt(lo)+')':''}</span><div class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(.33)},${ramp(.66)},${ramp(1)})"></div><span>${m.hi}${isFinite(hi)?' ('+m.fmt(hi)+')':''}</span>`;
+  }
+  if($('#showFac').checked)$('#legend').innerHTML+=' <span><span class="q" style="background:#0b6e4f"></span>primary <span class="q" style="background:#1d4ed8"></span>secondary <span class="q" style="background:#111"></span>tertiary</span>';
+  // ranking
+  const list=ROWS.map((d,i)=>({d,v:metric==='plan'?null:vals[i],q:metric==='plan'?quad(d,ms,mb):null}));
+  if(metric==='plan')list.sort((a,b)=>(a.q==='hh'?0:1)-(b.q==='hh'?0:1)||(b.d.s?.suit??0)-(a.d.s?.suit??0));
+  else{const key=x=>x.v==null?null:(m.inv?-x.v:x.v);
+    list.sort((a,b)=>key(a)==null?(key(b)==null?0:1):key(b)==null?-1:key(b)-key(a))}
+  const maxv=Math.max(...list.map(x=>x.v??0))||1;
+  $('#rank').innerHTML='<tr><th>#</th><th>LGA</th><th class="n">'+(metric==='plan'?'Class':'Value')+'</th></tr>'+
+    list.map((x,i)=>`<tr class="row${sel===x.d.b.pcode?' sel':''}" data-c="${esc(x.d.b.pcode)}"><td>${i+1}</td><td>${esc(x.d.name)}</td><td class="n">${metric==='plan'?(x.q?`<span class="q" style="background:${QCOL[x.q]}"></span>${QNAME[x.q]}`:'n/a'):m.fmt(x.v)+(x.v!=null&&!m.inv&&maxv>0?` <span class="bar" style="width:${Math.round(40*x.v/maxv)}px"></span>`:'')}</td></tr>`).join('');
+  $('#rank').querySelectorAll('.row').forEach(r=>r.onclick=()=>{sel=r.dataset.c;draw()});
+  detail();extra(ms,mb);
 }
 
-/* ---------- colour ---------- */
-function ramp(t){t=Math.max(0,Math.min(1,t));const S=[[46,139,87],[236,208,110],[192,57,43]];
- const k=t<.5?0:1,u=t<.5?t*2:(t-.5)*2,a=S[k],b=S[k+1];return'rgb('+a.map((x,i)=>Math.round(x+(b[i]-x)*u)).join(',')+')';}
-
-/* ---------- renderers ---------- */
-function renderAll(){
- const has=!!D;$('#overEmpty').style.display=has?'none':'';$('#overBody').style.display=has?'':'none';
- $('#valEmpty').style.display=has?'none':'';$('#valBody').style.display=has?'':'none';
- $('#demoBanner').style.display=(has&&D.demo)?'':'none';
- renderWeights();renderGEE();
- if(!has)return;derive();renderBuildNote();renderKPIs();renderRank();renderMap();renderStack();renderQuad();renderTable();renderVal();renderSens();
-}
-function renderBuildNote(){const el=$('#buildNote');
- if(!D.build||!D.build.weights){el.style.display='none';return;}
- const bw=CRIT.map(c=>D.build.weights[c.k]||0),s=bw.reduce((a,b)=>a+b,0)||1,cw=effW(W);
- const diff=Math.max(...CRIT.map((_,i)=>Math.abs(cw[i]-bw[i]/s)))*100;
- el.style.display='';el.innerHTML='Earth Engine build '+esc(String(D.build.generated||'').slice(0,10))+' · '+esc(D.build.year||'')+' data. Class areas and populations were computed with the build weights'+(diff>0.05?' (your current weights differ by up to '+diff.toFixed(1)+' percentage points, so class shares are stale; MVI, ranks and sensitivity use your current weights)':' (matching your current weights)')+'.';}
-function renderKPIs(){
- const T=D.rows.reduce((a,r)=>a+r.popT,0),H=D.rows.reduce((a,r)=>a+r.ph,0),M=D.rows.reduce((a,r)=>a+r.pm,0),L=D.rows.reduce((a,r)=>a+r.pl,0);
- const top=D.sorted[0];
- const k=(v,l)=>'<div class="card kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';
- $('#kpis').innerHTML=k(D.rows.length,'LGAs analysed')+k(fmt(T),'Population (WorldPop 2020)')+
-  k(f1(H/T*100)+'%','in high-vulnerability zones ('+fmt(H)+')')+k(f1(M/T*100)+'%','in medium zones')+k(f1(L/T*100)+'%','in low zones')+
-  k(esc(top.name),'Highest mean MVI ('+f3(top.mvi)+')');
-}
-function renderRank(){
- const o=D.sorted,n=o.length,h=n*20+10,mx=Math.max(...o.map(r=>r.mvi)),mn=Math.min(...o.map(r=>r.mvi));
- let s='<svg viewBox="0 0 520 '+h+'" width="100%" role="img" aria-label="LGA MVI ranking">';
- o.forEach((r,i)=>{const y=i*20+4,t=(r.mvi-mn)/(mx-mn||1),w=40+t*300;
-  s+='<text x="150" y="'+(y+12)+'" font-size="11" text-anchor="end">'+esc(r.name)+'</text><rect x="156" y="'+y+'" width="'+w+'" height="14" rx="3" fill="'+ramp(t)+'"><title>'+esc(r.name)+': MVI '+f3(r.mvi)+'</title></rect><text x="'+(160+w)+'" y="'+(y+12)+'" font-size="11" class="muted">'+f3(r.mvi)+'</text>';});
- $('#rank').innerHTML=s+'</svg>';
-}
-function renderStack(){
- const o=D.sorted,n=o.length,h=n*20+10;
- let s='<svg viewBox="0 0 520 '+h+'" width="100%" role="img" aria-label="Population by class">';
- o.forEach((r,i)=>{const y=i*20+4,W0=330,x0=150;let x=x0;
-  s+='<text x="144" y="'+(y+12)+'" font-size="11" text-anchor="end">'+esc(r.name)+'</text>';
-  [[r.shH,'var(--high)','High'],[r.shM,'var(--med)','Medium'],[r.shL,'var(--low)','Low']].forEach(([v,c,l])=>{const w=Math.max(0,v/100*W0);
-   s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="14" fill="'+c+'"><title>'+esc(r.name)+' – '+l+': '+f1(v)+'%</title></rect>';x+=w;});
-  s+='<text x="'+(x0+W0+6)+'" y="'+(y+12)+'" font-size="10" class="muted">'+f1(r.shH)+'% high</text>';});
- $('#stack').innerHTML=s+'</svg>';
-}
-function renderQuad(){
- if(!D.hasAcc){$('#quad').innerHTML='<p class="muted">Health-facility and road distance layers were not exported (set to null in the script), so the access axis is unavailable.</p>';return;}
- const R=D.rows,W0=480,H0=330,p=44;const xs=R.map(r=>r.mvi),ys=R.map(r=>r.acc);
- const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
- const X=v=>p+(v-x0)/(x1-x0||1)*(W0-p-10),Y=v=>H0-p-(v-y0)/(y1-y0||1)*(H0-p-10);
- const mxm=[...xs].sort((a,b)=>a-b)[Math.floor(xs.length/2)],mym=[...ys].sort((a,b)=>a-b)[Math.floor(ys.length/2)];
- const pm=Math.max(...R.map(r=>r.popT));
- let s='<svg viewBox="0 0 '+W0+' '+H0+'" width="100%" role="img" aria-label="Ecology vs access">';
- s+='<rect x="'+X(mxm)+'" y="10" width="'+(W0-10-X(mxm))+'" height="'+(Y(mym)-10)+'" fill="var(--high)" opacity=".08"/>';
- s+='<line x1="'+X(mxm)+'" x2="'+X(mxm)+'" y1="10" y2="'+(H0-p)+'" stroke="var(--line)" stroke-dasharray="4"/><line x1="'+p+'" x2="'+(W0-10)+'" y1="'+Y(mym)+'" y2="'+Y(mym)+'" stroke="var(--line)" stroke-dasharray="4"/>';
- s+='<text x="'+(W0/2)+'" y="'+(H0-8)+'" text-anchor="middle" font-size="11">Ecological MVI →</text><text transform="translate(12 '+(H0/2)+') rotate(-90)" text-anchor="middle" font-size="11">Poor access (facility + road distance) →</text>';
- R.forEach(r=>{const hi=r.mvi>mxm&&r.acc>mym;
-  s+='<circle cx="'+X(r.mvi)+'" cy="'+Y(r.acc)+'" r="'+(4+9*Math.sqrt(r.popT/pm))+'" fill="'+(hi?'var(--high)':'var(--accent)')+'" fill-opacity=".55" stroke="var(--panel)"><title>'+esc(r.name)+'\nMVI '+f3(r.mvi)+' · access '+f3(r.acc)+' · pop '+fmt(r.popT)+'</title></circle>';
-  if(hi)s+='<text x="'+(X(r.mvi)+8)+'" y="'+(Y(r.acc)-6)+'" font-size="9">'+esc(r.name)+'</text>';});
- $('#quad').innerHTML=s+'</svg><div class="legend"><span><i style="background:var(--high)"></i>High suitability + poor access (priority for outreach/surveillance)</span></div>';
-}
-function renderMap(){
- const el=$('#map');
- if(!GEO){el.innerHTML='<p class="muted">Load the LGA GeoJSON exported by the script to see the map. Basemap tiles are not available on this page, so LGAs are drawn on their own.</p>';return;}
- const metric=$('#mapMetric').value;const byKey={};D.rows.forEach(r=>byKey[norm(r.name)]=r);
- let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
- const rings=f=>{const g=f.geometry;if(!g)return[];return g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];};
- GEO.features.forEach(f=>rings(f).forEach(p=>p[0].forEach(c=>{minx=Math.min(minx,c[0]);maxx=Math.max(maxx,c[0]);miny=Math.min(miny,c[1]);maxy=Math.max(maxy,c[1]);})));
- const k=Math.cos((miny+maxy)/2*Math.PI/180),Wd=(maxx-minx)*k,Ht=maxy-miny,sc=460/Wd,H=Ht*sc;
- const vals=D.rows.map(r=>r[metric]).filter(isFinite),lo=Math.min(...vals),hi=Math.max(...vals);
- let s='<svg viewBox="0 0 480 '+(H+20)+'" width="100%" role="img" aria-label="LGA map">',miss=0;
- GEO.features.forEach(f=>{const pr=f.properties||{};const nm=pr.lga||pr.LGA||pr.ADM2_NAME||pr.NAME_2||pr.lganame||pr.name||'';
-  const r=byKey[norm(nm)];if(!r)miss++;const v=r?r[metric]:NaN;
-  const d=rings(f).map(p=>p.map(ring=>'M'+ring.map(c=>((c[0]-minx)*k*sc+10).toFixed(1)+' '+((maxy-c[1])*sc+10).toFixed(1)).join('L')+'Z').join('')).join('');
-  s+='<path d="'+d+'" fill="'+(isFinite(v)?ramp((v-lo)/(hi-lo||1)):'var(--soft)')+'" stroke="var(--panel)" stroke-width=".8" fill-rule="evenodd"><title>'+esc(nm)+(r?': '+f3(v):' (no match in CSV)')+'</title></path>';});
- el.innerHTML=s+'</svg><div class="muted" style="font-size:.78rem">Range '+f3(lo)+' – '+f3(hi)+(miss?' · '+miss+' polygon(s) did not match an LGA name in the CSV':'')+'</div>';
-}
-$('#mapMetric').addEventListener('change',()=>{if(D)renderMap();});
-function renderTable(){
- const hdr=['LGA','MVI','Rank','Population','% high','% med','% low','Area high km²','Cases 2024','Incidence /1,000'];
- let h='<thead><tr>'+hdr.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>';
- D.sorted.forEach(r=>{const i=D.rows.indexOf(r);
-  h+='<tr><td>'+esc(r.name)+'</td><td>'+f3(r.mvi)+'</td><td>'+r.rank+'</td><td>'+fmt(r.popT)+'</td><td>'+f1(r.shH)+'</td><td>'+f1(r.shM)+'</td><td>'+f1(r.shL)+'</td><td>'+f1(r.ah)+'</td>'+
-  '<td><input type="number" min="0" data-i="'+i+'" value="'+(r.cases==null?'':r.cases)+'" aria-label="Cases for '+esc(r.name)+'"></td><td>'+f1(r.inc)+'</td></tr>';});
- $('#tbl').innerHTML=h+'</tbody>';
- $('#tbl').querySelectorAll('input').forEach(inp=>inp.addEventListener('change',e=>{const v=parseFloat(e.target.value);D.rows[+e.target.dataset.i].cases=isFinite(v)?v:null;renderAll();}));
-}
-$('#bExport').onclick=()=>{if(!D)return;const rows=['lga,mvi,rank,population,pct_high,pct_med,pct_low,area_high_km2,cases_2024,incidence_per_1000'];
- D.sorted.forEach(r=>rows.push(['"'+r.name+'"',r.mvi.toFixed(4),r.rank,Math.round(r.popT),r.shH.toFixed(2),r.shM.toFixed(2),r.shL.toFixed(2),r.ah.toFixed(2),r.cases==null?'':r.cases,isFinite(r.inc)?r.inc.toFixed(3):''].join(',')));
- dl('akwa_ibom_mvi_results.csv',rows.join('\n'),'text/csv');};
-
-/* ---------- AHP UI ---------- */
-const OPTS=[9,8,7,6,5,4,3,2,1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9];
-const lab=v=>v>=1?String(Math.round(v)):'1/'+Math.round(1/v);
-function renderMatrix(){
- let h='<thead><tr><th class="rl"></th>'+CRIT.map((_,j)=>'<th>C'+(j+1)+'</th>').join('')+'</tr></thead><tbody>';
- for(let i=0;i<13;i++){h+='<tr><td class="rl" title="'+esc(CRIT[i].n)+'">C'+(i+1)+' '+esc(CRIT[i].n)+'</td>';
-  for(let j=0;j<13;j++){
-   if(j<i)h+='<td class="rc">'+lab(A[i][j])+'</td>';
-   else if(j===i)h+='<td class="rc">1</td>';
-   else{let best=OPTS.reduce((b,o)=>Math.abs(Math.log(o/A[i][j]))<Math.abs(Math.log(b/A[i][j]))?o:b);
-    h+='<td><select data-i="'+i+'" data-j="'+j+'" aria-label="C'+(i+1)+' vs C'+(j+1)+'">'+OPTS.map(o=>'<option value="'+o+'"'+(o===best?' selected':'')+'>'+lab(o)+'</option>').join('')+'</select></td>';}}
-  h+='</tr>';}
- $('#mx').innerHTML=h+'</tbody>';
- $('#mx').querySelectorAll('select').forEach(s=>s.addEventListener('change',e=>{const i=+e.target.dataset.i,j=+e.target.dataset.j,v=parseFloat(e.target.value);A[i][j]=v;A[j][i]=1/v;recompute();renderMatrix();renderAll();}));
-}
-function renderWeights(){
- const o=CRIT.map((c,i)=>({n:c.n,w:W[i],p:PAPER_W[i]}));
- let s='<svg viewBox="0 0 520 '+(o.length*24+8)+'" width="100%" role="img" aria-label="AHP weights">';
- const mx=0.26;
- o.forEach((r,i)=>{const y=i*24+4,w=r.w/mx*280,px=156+r.p/mx*280;
-  s+='<text x="150" y="'+(y+13)+'" font-size="11" text-anchor="end">'+esc(r.n)+'</text><rect x="156" y="'+y+'" width="'+w+'" height="16" rx="3" fill="var(--accent)" opacity=".85"/><text x="'+(160+w)+'" y="'+(y+13)+'" font-size="11">'+(r.w*100).toFixed(1)+'%</text><line x1="'+px+'" x2="'+px+'" y1="'+(y-1)+'" y2="'+(y+17)+'" stroke="var(--high)" stroke-width="2"><title>Published weight '+(r.p*100).toFixed(1)+'%</title></line>';});
- $('#wbars').innerHTML=s+'</svg>';
- const ok=AHPR.CR<=0.1;
- $('#cr').innerHTML='λmax = '+AHPR.lam.toFixed(3)+' · CI = '+AHPR.CI.toFixed(4)+' · <b>CR = '+AHPR.CR.toFixed(4)+'</b> (RI₁₃ = 1.56) <span class="'+(ok?'ok':'bad')+'">'+(ok?'acceptable (≤ 0.10)':'inconsistent (> 0.10): revise judgements')+'</span>';
-}
-$('#pPaper').onclick=()=>{A=buildA(PAPER_UP);recompute();renderMatrix();renderAll();};
-$('#pDl').onclick=()=>{const o={note:'AHP weights for the Earth Engine build job. Commit as weights.json.',weights:Object.fromEntries(CRIT.map((c,i)=>[c.k,+W[i].toFixed(4)])),CR:+AHPR.CR.toFixed(4)};dl('weights.json',JSON.stringify(o,null,2),'application/json');};
-$('#pEqual').onclick=()=>{A=buildA(PAPER_UP.map(r=>r.map(()=>1)));recompute();renderMatrix();renderAll();};
-
-/* ---------- validation ---------- */
-function renderVal(){
- const R=D.rows.filter(r=>isFinite(r.inc));
- if(R.length<5){$('#corr').innerHTML='<p class="muted">Enter confirmed cases for at least 5 LGAs (Overview → table) to compute correlations. Currently '+R.length+'.</p>';$('#scatter').innerHTML='';return;}
- const inc=R.map(r=>r.inc),cs=R.map(r=>r.cases);
- const T=[
-  ['MVI (mean) vs incidence',R.map(r=>r.mvi),inc,'rate'],
-  ['% pop in high class vs incidence',R.map(r=>r.shH),inc,'rate'],
-  ['% pop in low class vs incidence',R.map(r=>r.shL),inc,'rate'],
-  ...(D.hasAcc?[['Access vulnerability vs incidence',R.map(r=>r.acc),inc,'rate']]:[]),
-  ['High-class pop count vs cases',R.map(r=>r.ph),cs,'count'],
-  ['Low-class pop count vs cases',R.map(r=>r.pl),cs,'count'],
-  ['Total population vs cases',R.map(r=>r.popT),cs,'count']];
- const res=T.map(t=>{const r=pearson(t[1],t[2]),rho=spearman(t[1],t[2]);return{n:t[0],r,p:pFromR(r,R.length),rho,pr:pFromR(rho,R.length),kind:t[3]};});
- const adj=bh(res.map(x=>isFinite(x.p)?x.p:1));
- let h='<div class="scroll"><table><thead><tr><th>Test (n = '+R.length+')</th><th>Pearson r</th><th>p</th><th>BH-adj p</th><th>Spearman ρ</th><th>p</th></tr></thead><tbody>';
- res.forEach((x,i)=>{h+='<tr><td>'+esc(x.n)+(x.kind==='count'?' <span class="pill">scale-dependent</span>':'')+'</td><td>'+f3(x.r)+'</td><td>'+f3(x.p)+'</td><td>'+f3(adj[i])+'</td><td>'+f3(x.rho)+'</td><td>'+f3(x.pr)+'</td></tr>';});
- $('#corr').innerHTML=h+'</tbody></table></div><p class="hint" style="margin-top:8px">p-values use the t-approximation for r; Benjamini–Hochberg is applied across the Pearson tests listed.</p>';
- const xs=R.map(r=>r.mvi),W0=460,H0=300,p=46;const x0=Math.min(...xs),x1=Math.max(...xs),y0=0,y1=Math.max(...inc)*1.05;
- const X=v=>p+(v-x0)/(x1-x0||1)*(W0-p-10),Y=v=>H0-p-(v-y0)/(y1-y0||1)*(H0-p-10);
- const mx=mean(xs),my=mean(inc);const b=xs.reduce((a,x,i)=>a+(x-mx)*(inc[i]-my),0)/xs.reduce((a,x)=>a+(x-mx)**2,0),a0=my-b*mx;
- let s='<svg viewBox="0 0 '+W0+' '+H0+'" width="100%" role="img" aria-label="MVI vs incidence">';
- s+='<line x1="'+X(x0)+'" y1="'+Y(a0+b*x0)+'" x2="'+X(x1)+'" y2="'+Y(a0+b*x1)+'" stroke="var(--accent)" stroke-width="2" opacity=".6"/>';
- R.forEach(r=>{s+='<circle cx="'+X(r.mvi)+'" cy="'+Y(r.inc)+'" r="5" fill="var(--accent)" fill-opacity=".6"><title>'+esc(r.name)+': MVI '+f3(r.mvi)+', '+f1(r.inc)+' per 1,000</title></circle>';});
- s+='<text x="'+(W0/2)+'" y="'+(H0-8)+'" text-anchor="middle" font-size="11">LGA mean MVI →</text><text transform="translate(12 '+(H0/2)+') rotate(-90)" text-anchor="middle" font-size="11">Confirmed cases per 1,000</text></svg>';
- $('#scatter').innerHTML=s;
-}
-function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function renderSens(){
- $('#sigV').textContent=SIG.toFixed(2);
- const rng=mulberry(42),N=1000,R=D.rows,n=R.length,act=activeIdx();
- const rankOf=w=>{const m=R.map(r=>r.s.reduce((a,s,i)=>a+w[i]*s,0));const o=m.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]);const rk=Array(n);o.forEach((x,k)=>rk[x[1]]=k+1);return rk;};
- const base=rankOf(D.w),all=R.map(()=>[]);const q=Math.ceil(n/4);
- for(let t=0;t<N;t++){const w=D.w.map((x,i)=>act.includes(i)?x*Math.exp(SIG*gauss(rng)):0);const s=w.reduce((a,b)=>a+b,0);const rk=rankOf(w.map(x=>x/s));rk.forEach((v,i)=>all[i].push(v));}
- const eq=rankOf(CRIT.map((_,i)=>act.includes(i)?1/act.length:0));const rho=spearman(base,eq);
- const st=R.map((r,i)=>{const a=all[i].sort((x,y)=>x-y);return{r,b:base[i],lo:a[Math.floor(.05*N)],hi:a[Math.floor(.95*N)],med:a[N>>1],pt:a.filter(v=>v<=q).length/N};}).sort((a,b)=>a.b-b.b);
- const h=n*20+34;let s='<svg viewBox="0 0 560 '+h+'" width="100%" role="img" aria-label="Rank sensitivity">';
- const X=v=>170+(v-1)/(n-1||1)*300;
- s+='<text x="170" y="12" font-size="10" class="muted">rank 1</text><text x="470" y="12" font-size="10" text-anchor="end" class="muted">rank '+n+'</text>';
- st.forEach((d,i)=>{const y=i*20+26;
-  s+='<text x="164" y="'+(y+4)+'" font-size="11" text-anchor="end">'+esc(d.r.name)+'</text><line x1="'+X(d.lo)+'" x2="'+X(d.hi)+'" y1="'+y+'" y2="'+y+'" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" opacity=".35"/><circle cx="'+X(d.b)+'" cy="'+y+'" r="4" fill="var(--accent)"/><text x="480" y="'+(y+4)+'" font-size="10" class="muted">rank '+d.lo+'–'+d.hi+' · top-quartile in '+Math.round(d.pt*100)+'%</text>';});
- $('#sens').innerHTML=s+'</svg><p class="hint">Spearman ρ between the current ranking and an equal-weights ranking: <b>'+f3(rho)+'</b>. LGAs with wide bars or a mid-range top-quartile probability are the ones whose priority depends on expert judgement.</p>';
-}
-$('#sig').addEventListener('input',e=>{SIG=parseFloat(e.target.value);if(D)renderSens();else $('#sigV').textContent=SIG.toFixed(2);});
-
-/* ---------- Earth Engine script ---------- */
-const GEE_TPL=`// =====================================================================
-// Akwa Ibom State: Malaria Vulnerability Index (MVI), AHP-WLC
-// Method adapted from Abbah et al. (2026) Discover Public Health 23:551
-// Scores are 0-1 where 1 = MOST vulnerable (higher MVI = more suitable/exposed).
-// Weights generated by the dashboard (AHP principal eigenvector).
-// =====================================================================
-var YEAR  = 2024;
-var SCALE = 100;                // reduction scale in m (WorldPop native ~100 m)
-var CRS   = 'EPSG:32632';       // UTM 32N, suitable for Akwa Ibom (about 7-8.2 E)
-var CAP   = 5000;               // distance cap (m) for habitat-proximity layers
-
-// ---- 1. LGAs. Swap for your GRID3 LGA asset if you prefer (keep a name field).
-var lgas = ee.FeatureCollection('FAO/GAUL/2015/level2')
-  .filter(ee.Filter.eq('ADM0_NAME', 'Nigeria'))
-  .filter(ee.Filter.eq('ADM1_NAME', 'Akwa Ibom'));
-print('LGA count (expect 31):', lgas.size());
-var aoi = lgas.geometry();
-Map.centerObject(lgas, 9);
-
-// ---- 2. Optional user assets. Leave null to skip; the weight is redistributed.
-var ROADS      = null;  // e.g. ee.FeatureCollection('projects/YOUR_PROJECT/assets/akwaibom_roads_osm')
-var FACILITIES = null;  // e.g. ee.FeatureCollection('projects/YOUR_PROJECT/assets/akwaibom_facilities_grid3')
-
-// ---- 3. AHP weights
-var W = __WEIGHTS__;
-if (!ROADS)      { W.road = 0; }
-if (!FACILITIES) { W.health = 0; }
-var tot = Object.keys(W).reduce(function (a, k) { return a + W[k]; }, 0);
-Object.keys(W).forEach(function (k) { W[k] = W[k] / tot; });
-print('Effective weights', W);
-
-var proj = ee.Projection(CRS).atScale(SCALE);
-var d0 = YEAR + '-01-01', d1 = (YEAR + 1) + '-01-01';
-
-// ---- 4. Land cover: Dynamic World 10 m, annual mode
-var dwCol = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1').filterDate(d0, d1).filterBounds(aoi).select('label');
-var dw = dwCol.mode().setDefaultProjection(ee.Image(dwCol.first()).projection());
-var water   = dw.eq(0);
-var flooded = dw.eq(3);   // flooded vegetation = wetland proxy (mangrove/swamp)
-var crops   = dw.eq(4);
-var built   = dw.eq(6);
-var bare    = dw.eq(7);
-var land    = water.not();
-
-// Presence at SCALE (>=2% of the cell) and capped Euclidean distance (m)
-function present(mask) {
-  return mask.reduceResolution({reducer: ee.Reducer.mean(), maxPixels: 1024}).reproject(proj).gt(0.02);
-}
-function distP(pres) {
-  return pres.selfMask().distance(ee.Kernel.euclidean(CAP, 'meters')).unmask(CAP).min(CAP);
+function detail(){
+  const el=$('#detail');
+  if(!sel){el.innerHTML='<h2>Select an LGA</h2><p class="hint">Click an area on the map or a row in the ranking.</p>';return}
+  const d=byCode[sel],b=d.b,s=d.s;
+  const row=(a,v)=>`<dt>${a}</dt><dd>${v}</dd>`;
+  el.innerHTML=`<h2>${esc(d.name)}</h2>
+  <h3>Habitat suitability</h3>${s?`<dl>${row('Combined score (0 to 1)',fmt(s.suit,2))}${LKEYS.map((k,i)=>row(LAYERS[k]+' score',fmt(s.s[i],2))).join('')}
+   ${row('Rainfall',fmt(s.raw.rainfall_mm)+' mm/yr')}${row('Land surface temperature',fmt(s.raw.temperature_c,1)+' °C')}${row('NDVI',fmt(s.raw.ndvi,2))}${row('Surface-water occurrence',fmt(s.raw.water_occurrence_pct,1)+'%')}</dl>`:'<p class="hint">Not built yet.</p>'}
+  <h3>Observed burden, 2023</h3><dl>${row('RDT positivity, all ages',pct(b.tpr,1))}${row('Under 5',pct(b.tpr_u5,1))}${row('5 and over',pct(b.tpr_o5,1))}
+   ${row('Tested by RDT / positive',fmt(b.tested)+' / '+fmt(b.pos))}${row('Uncomplicated cases',fmt(b.unc))}</dl>
+   ${b.flags.length?'<p><span class="tag">Data check</span> <span class="hint">RDT positives and uncomplicated cases differ by more than 20%.</span></p>':''}
+  <h3>Health-facility access</h3><dl>${row('Facilities (GRID3)',fmt(b.fac.total)+` (${b.fac.primary} primary, ${b.fac.secondary} secondary, ${b.fac.tertiary} tertiary)`)}${row('Facilities per 100 km²',fmt(b.fac_per_100km2,1))}
+   ${s?row('Population-weighted distance',fmt(s.access.pop_weighted_dist_km,1)+' km')+row('People beyond '+S.access_threshold_km+' km',fmt(s.access.pop_beyond)+' ('+pct(beyondShare(d))+')')+row('Population (WorldPop 2020)',fmt(s.pop_total)):''}</dl>`;
 }
 
-// ---- 5. Hydrology, terrain
-var merit = ee.Image('MERIT/Hydro/v1_0_1');
-var upa   = merit.select('upa');                                   // km2 upstream area
-var streamPres = present(upa.gt(2)).or(present(water));            // river network + open water
-var dStream  = distP(streamPres);
-var dWetland = distP(present(flooded));
-var dCrop    = distP(present(crops));
-var dBuilt   = distP(present(built));
-var dBare    = distP(present(bare));
+function extra(ms,mb){
+  const el=$('#extra');
+  if(tab!=='plan'&&tab!=='burden'){el.hidden=true;return}
+  el.hidden=false;
+  if(tab==='plan'){
+    if(!S){el.innerHTML='<h2>Priority areas</h2><p class="hint">Needs the suitability build.</p>';return}
+    const pri=ROWS.filter(d=>quad(d,ms,mb)==='hh').sort((a,c)=>c.s.suit-a.s.suit);
+    el.innerHTML=`<h2>Priority areas: high suitability and poor access</h2>
+    <p class="hint">Cut-offs are the state medians (suitability ${fmt(ms,2)}, share beyond ${S.access_threshold_km} km ${pct(mb)}). These are relative classes, not absolute thresholds.</p>
+    <table><tr><th>LGA</th><th class="n">Suitability</th><th class="n">People beyond ${S.access_threshold_km} km</th><th class="n">RDT positivity</th></tr>${pri.map(d=>`<tr><td>${esc(d.name)}</td><td class="n">${fmt(d.s.suit,2)}</td><td class="n">${fmt(d.s.access.pop_beyond)}</td><td class="n">${pct(d.b.tpr,0)}</td></tr>`).join('')||'<tr><td colspan="4">None</td></tr>'}</table>`;
+  }else{
+    const rho=S?spearman(ROWS.map(d=>d.s?.suit),ROWS.map(d=>d.b.tpr)):null;
+    el.innerHTML=`<h2>Does suitability line up with observed burden?</h2>
+    <p class="hint">${rho==null?'Needs the suitability build.':`Spearman correlation between combined suitability and RDT positivity across 31 LGAs: <b>${fmt(rho,2)}</b>. With 31 areas, facility-reported data and a provisional model, treat this as indicative only.`}</p>`;
+  }
+}
+function rank(a){const idx=a.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]),r=[];idx.forEach(([,i],j)=>r[i]=j+1);return r}
+function spearman(a,b){const p=a.map((v,i)=>[v,b[i]]).filter(([x,y])=>x!=null&&y!=null);if(p.length<5)return null;
+  const ra=rank(p.map(x=>x[0])),rb=rank(p.map(x=>x[1])),n=p.length,ma=ra.reduce((s,v)=>s+v)/n,mb=rb.reduce((s,v)=>s+v)/n;
+  let c=0,va=0,vb=0;for(let i=0;i<n;i++){c+=(ra[i]-ma)*(rb[i]-mb);va+=(ra[i]-ma)**2;vb+=(rb[i]-mb)**2}return c/Math.sqrt(va*vb)}
 
-var srtm  = ee.Image('USGS/SRTMGL1_003');
-var elev  = srtm.select('elevation').rename('elev');
-var slope = ee.Terrain.slope(srtm).rename('slope');
-var slopeM = ee.Terrain.slope(merit.select('elv')).multiply(Math.PI / 180).max(0.0017);
-var twi = upa.multiply(1e6).divide(90).divide(slopeM.tan()).log().rename('twi');
+function setMetricOptions(){
+  const opts=Object.entries(M).filter(([,m])=>m.tab===tab);
+  $('#metric').innerHTML=opts.map(([id,m])=>`<option value="${id}">${esc(m.label)}</option>`).join('');
+  $('#metric').parentElement.hidden=opts.length<2;
+  metric=TABS[tab].def;$('#metric').value=metric;
+}
+function showTab(t){
+  tab=t;
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+  const isM=t==='method';
+  $('#view-map').hidden=isM;$('#view-method').hidden=!isM;
+  if(isM){method();return}
+  setMetricOptions();draw();
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+$('#metric').onchange=e=>{metric=e.target.value;draw()};
+$('#showFac').onchange=draw;
 
-// ---- 6. Climate, vegetation
-var precip = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY').filterDate(d0, d1).sum().rename('precip');
-var lstC = ee.ImageCollection('MODIS/061/MOD11A2').filterDate(d0, d1).select('LST_Day_1km')
-  .mean().multiply(0.02).subtract(273.15);
-var ndvi = ee.ImageCollection('MODIS/061/MOD13Q1').filterDate(d0, d1).select('NDVI')
-  .mean().multiply(0.0001).rename('ndvi');
+$('#chips').innerHTML=[
+ `Cases: ${B.year} (Ministry of Health)`,
+ S?`Suitability layers: ${S.year}`:'Suitability: not built yet',
+ S?`Population: WorldPop ${S.population_year}`:'',
+ `Facilities: GRID3 v2.0 (NHFR 2024), ${B.facilities.length}`,
+ S?`Built ${S.generated.slice(0,10)}`:''].filter(Boolean).map(c=>`<span class="chip">${esc(c)}</span>`).join('');
 
-// 2nd-98th percentile min-max normalisation within the state
-function pnorm(img, name) {
-  var p = img.reduceRegion({reducer: ee.Reducer.percentile([2, 98]), geometry: aoi, scale: 250,
-                            maxPixels: 1e10, bestEffort: true, tileScale: 4});
-  var lo = ee.Number(p.get(name + '_p2')), hi = ee.Number(p.get(name + '_p98'));
-  return img.subtract(lo).divide(hi.subtract(lo)).clamp(0, 1);
+function method(){
+  const flags=B.rows.filter(r=>r.flags.length).map(r=>esc(r.name)).join(', ')||'none';
+  $('#view-method').innerHTML=`<h2>Method and data</h2>
+  <h3>1. Habitat suitability (the main map)</h3>
+  <p>Five layers are scored 0 to 1 (1 = most suitable for Anopheles habitat) and combined with <b>equal weights of 20% each</b>. The weights are provisional and chosen for transparency, not fitted to the case data.</p>
+  <ul>
+   <li><b>Rainfall</b>: CHIRPS annual total, scaled between the state 2nd and 98th percentiles; more rain scores higher.</li>
+   <li><b>Temperature</b>: MODIS daytime land-surface temperature, scored with a thermal-suitability curve that peaks near 25 °C and falls to zero at about 16 °C and 34 °C (Mordecai et al., 2013).</li>
+   <li><b>NDVI</b>: MODIS MOD13Q1 annual mean, scaled between the 2nd and 98th percentiles; greener scores higher.</li>
+   <li><b>Surface water</b>: JRC Global Surface Water. Score falls linearly with distance to water (occurrence of 10% or more) up to 5 km. Permanent water bodies (50% or more) are masked out.</li>
+   <li><b>Topographic wetness (TWI)</b>: derived from MERIT Hydro; wetter terrain scores higher.</li>
+  </ul>
+  <p>Classes (low, moderate, high) are equal thirds of the state's 2nd to 98th percentile suitability range. They are relative, not absolute.</p>
+  <h3>2. Observed burden</h3>
+  <p><b>RDT test positivity</b> = persons testing positive by RDT ÷ fever patients tested by RDT, 2023, Ministry of Health, Akwa Ibom State. Age groups are combined by summing counts. Uncomplicated cases per 1,000 uses WorldPop 2020 and is approximate. Severe, clinically diagnosed and microscopy columns are not used because they are incomplete or overlap with RDT results.</p>
+  <p>LGAs where RDT positives and uncomplicated cases differ by more than 20%: ${flags}.</p>
+  <h3>3. Health-facility access</h3>
+  <p>GRID3 Nigeria health facilities v2.0 (NHFR 2024), all levels, assigned to LGAs by location. Distances are straight-line (no road network). The population beyond ${S?S.access_threshold_km:5} km uses WorldPop 2020.</p>
+  <h3>4. Limits to keep in mind</h3>
+  <ul>
+   <li>Suitability is a habitat indicator. It is not a measure of infection or risk, and it ignores interventions, housing and behaviour.</li>
+   <li>Case data are facility-reported. Under-reporting is likely where access is poor, so low burden there can mean missed cases.</li>
+   <li>Layer years are ${S?S.year:2023} to match the case year; population is WorldPop 2020. Surface-water distance includes coastal and river water.</li>
+   <li>Relationships in the equal-weight model (for example, that more rainfall always raises suitability) are simplifications to be reviewed with entomology experts.</li>
+  </ul>
+  <h3>5. Data files and rebuilding</h3>
+  <p><code>data/akwa_ibom_burden.json</code> is built offline by <code>scripts/build_burden.py</code> from the cases CSV and GRID3 facilities. <code>data/akwa_ibom_suitability.json</code> is built by <code>scripts/build_data.py</code> using Earth Engine (the <i>Refresh Earth Engine data</i> workflow). Settings are in <code>config.json</code>.</p>`;
 }
 
-// ---- 7. Standardised scores (1 = most vulnerable)
-var sHealth = FACILITIES ? FACILITIES.distance({searchRadius: 20000, maxError: 50}).unmask(20000).min(20000).divide(20000) : ee.Image(0);
-var sRoad   = ROADS ? ROADS.distance({searchRadius: 10000, maxError: 50}).unmask(10000).min(10000).divide(10000) : ee.Image(0);
-
-var S = ee.Image.cat([
-  ee.Image(1).subtract(dStream.divide(CAP)).rename('s_stream'),
-  ee.Image(1).subtract(dWetland.divide(CAP)).rename('s_wetland'),
-  pnorm(precip, 'precip').rename('s_precip'),
-  pnorm(twi, 'twi').rename('s_twi'),
-  // temperature suitability peaks near 25 C (Mordecai et al. 2013), zero at about 16 and 34 C
-  ee.Image(1).subtract(lstC.subtract(25).abs().divide(9)).clamp(0, 1).rename('s_lst'),
-  ee.Image(1).subtract(dCrop.divide(CAP)).rename('s_cropland'),
-  ee.Image(1).subtract(pnorm(elev, 'elev')).rename('s_elev'),
-  ee.Image(1).subtract(pnorm(slope, 'slope')).rename('s_slope'),
-  pnorm(ndvi, 'ndvi').rename('s_ndvi'),
-  sHealth.rename('s_health'),
-  sRoad.rename('s_road'),
-  dBuilt.divide(CAP).rename('s_builtup'),
-  dBare.divide(CAP).rename('s_bare')
-]);
-var keys = ['stream','wetland','precip','twi','lst','cropland','elev','slope','ndvi','health','road','builtup','bare'];
-
-// ---- 8. Weighted linear combination
-var mvi = ee.Image(0);
-keys.forEach(function (k) { mvi = mvi.add(S.select('s_' + k).multiply(W[k])); });
-mvi = mvi.updateMask(land).rename('mvi');
-var valid = mvi.mask();
-
-// ---- 9. Classes: equal intervals on the 2nd-98th percentile range (1 low, 2 medium, 3 high)
-var q  = mvi.reduceRegion({reducer: ee.Reducer.percentile([2, 98]), geometry: aoi, scale: 250,
-                           maxPixels: 1e10, bestEffort: true, tileScale: 4});
-var lo = ee.Number(q.get('mvi_p2')), hi = ee.Number(q.get('mvi_p98')), step = hi.subtract(lo).divide(3);
-print('Class breaks (low|med, med|high):', lo.add(step), hi.subtract(step));
-var cls = ee.Image(2).where(mvi.lt(lo.add(step)), 1).where(mvi.gte(hi.subtract(step)), 3)
-            .updateMask(valid).rename('cls');
-
-Map.addLayer(mvi.clip(aoi), {min: 0.25, max: 0.65, palette: ['1a9850', 'fee08b', 'd73027']}, 'MVI (high = vulnerable)');
-Map.addLayer(cls.clip(aoi), {min: 1, max: 3, palette: ['1a9850', 'ffffbf', 'd73027']}, 'MVI class', false);
-Map.addLayer(lgas.style({color: '000000', fillColor: '00000000', width: 1}), {}, 'LGAs');
-
-// ---- 10. Population (WorldPop 2020, 100 m) and areas per class
-var pop = ee.ImageCollection('WorldPop/GP/100m/pop')
-  .filter(ee.Filter.eq('country', 'NGA')).filter(ee.Filter.eq('year', 2020))
-  .mosaic().select('population');
-var area = ee.Image.pixelArea().divide(1e6);
-
-var sumImg = S.updateMask(valid).addBands([
-  ee.Image(1).updateMask(valid).rename('n'),
-  pop.updateMask(valid).rename('pop_total'),
-  pop.updateMask(cls.eq(3)).rename('pop_high'),
-  pop.updateMask(cls.eq(2)).rename('pop_med'),
-  pop.updateMask(cls.eq(1)).rename('pop_low'),
-  area.updateMask(cls.eq(3)).rename('area_high_km2'),
-  area.updateMask(cls.eq(2)).rename('area_med_km2'),
-  area.updateMask(cls.eq(1)).rename('area_low_km2')
-]);
-
-var raw = sumImg.reduceRegions({collection: lgas, reducer: ee.Reducer.sum(), scale: SCALE, crs: CRS, tileScale: 8});
-
-// ---- 11. Per-LGA outputs: area-weighted mean scores + class areas/populations
-var out = raw.map(function (f) {
-  var n = ee.Number(f.get('n'));
-  var d = {lga: f.get('ADM2_NAME')};
-  keys.forEach(function (k) { d['s_' + k] = ee.Number(f.get('s_' + k)).divide(n); });
-  ['pop_total','pop_high','pop_med','pop_low','area_high_km2','area_med_km2','area_low_km2'].forEach(function (b) { d[b] = f.get(b); });
-  return ee.Feature(f.geometry().simplify(100), d);
-});
-print('Zonal output', out);
-
-var cols = ['lga'].concat(keys.map(function (k) { return 's_' + k; }),
-  ['pop_total','pop_high','pop_med','pop_low','area_high_km2','area_med_km2','area_low_km2']);
-Export.table.toDrive({collection: out, description: 'AkwaIbom_MVI_zonal', fileFormat: 'CSV', selectors: cols});
-Export.table.toDrive({collection: out.select(['lga']), description: 'AkwaIbom_LGA_geojson', fileFormat: 'GeoJSON'});
-// Then add 2024 confirmed cases (DHIS2) in the dashboard table or as a cases_2024 column.
-`;
-function geeScript(){
- const obj='{'+CRIT.map((c,i)=>c.k+': '+W[i].toFixed(4)).join(', ')+'}';
- return GEE_TPL.replace('__WEIGHTS__',obj);
-}
-function renderGEE(){$('#gee').textContent=geeScript();}
-$('#gCopy').onclick=async()=>{try{await navigator.clipboard.writeText(geeScript());$('#gMsg').textContent='Copied.';}catch(_){const r=document.createRange();r.selectNodeContents($('#gee'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('#gMsg').textContent='Selected. Press Ctrl/Cmd+C.';}setTimeout(()=>$('#gMsg').textContent='',2500);};
-$('#gDl').onclick=()=>dl('akwa_ibom_mvi.js',geeScript(),'text/javascript');
-
-/* ---------- tabs ---------- */
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
- document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
- document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));});
-
-
-/* ---------- Run analysis (calls the Earth Engine API service) ---------- */
-const API=(window.MVI_API||'').replace(/\/$/,'');
-let META=null,RUNRES=null;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const isoD=d=>d.toISOString().slice(0,10);
-async function api(path,opts){
- const r=await fetch(API+path,opts);
- if(!r.ok){let m=r.statusText;try{const j=await r.json();m=typeof j.detail==='string'?j.detail:JSON.stringify(j.detail);}catch(_){}throw new Error(m);}
- return r.json();}
-function setRunMsg(h){$('#runMsg').innerHTML=h;}
-function clampDates(s,e){const mn=new Date(META.min_date),mx=new Date(META.max_date);
- if(s<mn)s=mn;if(e>mx)e=mx;if(e<s)e=s;return[s,e];}
-function applyPreset(kind){
- if(!META)return;const y=+$('#runYear').value;let s,e;
- if(kind==='year'){s=new Date(Date.UTC(y,0,1));e=new Date(Date.UTC(y,11,31));}
- else if(kind==='wet'){s=new Date(Date.UTC(y,3,1));e=new Date(Date.UTC(y,9,31));}
- else if(kind==='dry'){s=new Date(Date.UTC(y-1,10,1));e=new Date(Date.UTC(y,2,31));}
- else{e=new Date(META.max_date);s=new Date(e);s.setUTCDate(s.getUTCDate()-364);}
- [s,e]=clampDates(s,e);$('#runStart').value=isoD(s);$('#runEnd').value=isoD(e);}
-document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.preset)));
-async function initRun(){
- const APP=(window.MVI_APP||'').trim();
- if(APP){$('#runOff').style.display='none';$('#runForm').innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h3>Run analysis (Google Earth Engine App)</h3><a class="btn" href="'+esc(APP)+'" target="_blank" rel="noopener">Open full screen</a></div><p class="hint">Pick an LGA and a period, run the model, and download GeoTIFFs. Runs on Google Earth Engine; no account needed. If the panel stays blank, use Open full screen.</p><iframe src="'+esc(APP)+'" title="Akwa Ibom MVI Earth Engine App" style="width:100%;height:820px;border:1px solid var(--line);border-radius:10px;background:var(--soft)" loading="lazy"></iframe></div>';return;}
- if(!API){$('#runOff').style.display='';$('#runForm').style.display='none';return;}
- try{META=await api('/meta');}
- catch(e){$('#runOff').style.display='';$('#runOff').innerHTML='Analysis service unavailable: '+esc(e.message)+' The free host may be waking up; reload in a minute.';$('#runForm').style.display='none';return;}
- $('#runOff').style.display='none';$('#runForm').style.display='';
- $('#runLga').innerHTML='<option value="ALL">All of Akwa Ibom ('+META.lgas.length+' LGAs)</option>'+META.lgas.map(n=>'<option>'+esc(n)+'</option>').join('');
- const y1=+META.max_date.slice(0,4),y0=+META.min_date.slice(0,4);let o='';
- for(let y=y1;y>=y0;y--)o+='<option>'+y+'</option>';$('#runYear').innerHTML=o;
- $('#runStart').min=META.min_date;$('#runStart').max=META.max_date;$('#runEnd').min=META.min_date;$('#runEnd').max=META.max_date;
- applyPreset('last12');}
-$('#runBtn').addEventListener('click',async()=>{
- const btn=$('#runBtn'),start=$('#runStart').value,end=$('#runEnd').value;
- if(!start||!end){setRunMsg('<span class="bad">Choose a start and end date.</span>');return;}
- btn.disabled=true;$('#runOut').style.display='none';const t0=Date.now();
- const body={start,end,lga:$('#runLga').value,weights:Object.fromEntries(CRIT.map((c,i)=>[c.k,W[i]]))};
- try{
-  setRunMsg('Submitting…');
-  const j=await api('/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  let st;
-  for(;;){st=await api('/jobs/'+j.id);
-   setRunMsg('<span class="pill">'+esc(st.status)+'</span> '+esc(st.message||'')+' · '+Math.round((Date.now()-t0)/1000)+' s');
-   if(st.status==='done'||st.status==='error')break;
-   if(Date.now()-t0>25*60e3)throw new Error('Timed out after 25 minutes.');
-   await sleep(3000);}
-  if(st.status==='error')throw new Error(st.error||'Analysis failed.');
-  setRunMsg('<span class="ok">Finished in '+Math.round((Date.now()-t0)/1000)+' s.</span>');
-  renderRun(st.result);
- }catch(e){setRunMsg('<span class="bad">'+esc(e.message)+'</span>');}
- finally{btn.disabled=false;}
-});
-function renderRun(res){
- RUNRES=res;const R=res.rows,sum=k=>R.reduce((a,r)=>a+(r[k]||0),0);
- const T=sum('pop_total')||1,mm=R.filter(r=>r.mean_mvi!=null);
- const mean=mm.length?mm.reduce((a,r)=>a+r.mean_mvi,0)/mm.length:NaN;
- const k=(v,l)=>'<div class="card kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';
- let h='<div class="grid g4">'+k(esc(res.lga==='ALL'?'Akwa Ibom':res.lga),res.period.start+' → '+res.period.end)+
-  k(f3(mean),'Mean MVI')+k(fmt(sum('area_high_km2'))+' km²','High-vulnerability area ('+f1(sum('area_high_km2')/((sum('area_high_km2')+sum('area_med_km2')+sum('area_low_km2'))||1)*100)+'%)')+
-  k(fmt(sum('pop_high')),'People in high zones ('+f1(sum('pop_high')/T*100)+'%)')+
-  k(fmt(sum('pop_med')),'People in medium zones ('+f1(sum('pop_med')/T*100)+'%)')+
-  k(fmt(sum('pop_low')),'People in low zones ('+f1(sum('pop_low')/T*100)+'%)')+'</div>';
- h+='<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Preview</h3>';
- if(res.previews.mvi){h+='<div class="row" style="margin-bottom:6px"><button data-pv="mvi">MVI</button><button data-pv="class">Classes</button></div><img id="pvImg" src="'+esc(res.previews.mvi)+'" alt="MVI preview" style="max-width:100%;border-radius:8px;background:var(--soft)"><div class="legend" style="margin-top:6px"><span><i style="background:#1a9850"></i>Low</span><span><i style="background:#fee08b"></i>Medium</span><span><i style="background:#d73027"></i>High</span></div>';}
- else h+='<p class="muted">No preview available.</p>';
- h+='</div><div class="card"><h3>Download rasters (GeoTIFF)</h3><p class="hint">100 m, UTM zone 32N (EPSG:32632). Links expire after about an hour.</p>';
- if(res.downloads.mvi)h+='<p><a class="btn" href="'+esc(res.downloads.mvi)+'" download>MVI (float32, higher = more vulnerable)</a></p><p><a class="btn" href="'+esc(res.downloads.class)+'" download>Classes (1 low, 2 medium, 3 high)</a></p><p class="muted" style="font-size:.8rem">NoData: MVI = −9999, classes = 0. In QGIS set these as the layer\'s NoData value if it is not read automatically.</p>';
- else h+='<p class="muted">Raster download unavailable for this request.</p>';
- h+='<p class="muted" style="font-size:.8rem;margin-top:10px">Classes are equal thirds of the 2nd–98th percentile MVI range across Akwa Ibom for this period (breaks '+f3(res.breaks[0])+' and '+f3(res.breaks[1])+'), so they describe <b>relative</b> vulnerability within the state.</p></div></div>';
- if(res.notes.length)h+='<div class="note" style="margin-top:14px">'+res.notes.map(esc).join('<br>')+'</div>';
- h+='<div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>Statistics by LGA</h3><button id="runCsv">Download table (CSV)</button></div><div class="scroll"><table><thead><tr><th>LGA</th><th>Mean MVI</th><th>Population</th><th>% high</th><th>% med</th><th>% low</th><th>High km²</th><th>Med km²</th><th>Low km²</th></tr></thead><tbody>';
- R.forEach(r=>{const t=r.pop_total||1;h+='<tr><td>'+esc(r.name)+'</td><td>'+f3(r.mean_mvi)+'</td><td>'+fmt(r.pop_total)+'</td><td>'+f1(r.pop_high/t*100)+'</td><td>'+f1(r.pop_med/t*100)+'</td><td>'+f1(r.pop_low/t*100)+'</td><td>'+f1(r.area_high_km2)+'</td><td>'+f1(r.area_med_km2)+'</td><td>'+f1(r.area_low_km2)+'</td></tr>';});
- h+='</tbody></table></div></div>';
- const o=$('#runOut');o.innerHTML=h;o.style.display='';
- o.querySelectorAll('[data-pv]').forEach(b=>b.addEventListener('click',()=>{$('#pvImg').src=res.previews[b.dataset.pv];}));
- const c=$('#runCsv');if(c)c.onclick=()=>{const hd=['lga','mean_mvi','pop_total','pop_high','pop_med','pop_low','area_high_km2','area_med_km2','area_low_km2'];
-  dl('akwa_ibom_mvi_'+res.period.start+'_'+res.period.end+'.csv',[hd.join(',')].concat(R.map(r=>['"'+r.name+'"',r.mean_mvi,r.pop_total,r.pop_high,r.pop_med,r.pop_low,r.area_high_km2,r.area_med_km2,r.area_low_km2].join(','))).join('\n'),'text/csv');};
-}
-
-renderMatrix();renderAll();autoload();initRun();
+showTab('suit');
+})();
 </script>
 </body>
 </html>
