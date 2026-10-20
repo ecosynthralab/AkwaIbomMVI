@@ -30,6 +30,7 @@ button#dlGeo,button#dlCsv,button#dlFac{font:inherit;padding:6px 12px;border:1px 
 button#dlGeo:hover,button#dlCsv:hover,button#dlFac:hover{background:#eef6f2}
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;max-width:100%}
 svg{width:100%;height:auto;display:block}
+.lbl{font-size:1.6px;fill:#111;paint-order:stroke;stroke:#fff;stroke-width:.35px;stroke-linejoin:round;pointer-events:none;font-weight:600}
 .lga{stroke:#fff;stroke-width:.4;cursor:pointer}
 .lga:hover,.lga.sel{stroke:#000;stroke-width:1.2}
 .legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:6px}
@@ -72,6 +73,7 @@ footer{padding:16px 20px;color:var(--muted);font-size:12px;text-align:center}
         <div class="controls">
           <label>Show <select id="metric"></select></label>
           <label><input type="checkbox" id="showFac"> Health facilities</label>
+          <label><input type="checkbox" id="showNames" checked> LGA names</label>
         </div>
         <div id="notice"></div>
         <svg id="map" viewBox="0 0 100 100" role="img" aria-label="Map of Akwa Ibom local government areas"></svg>
@@ -156,6 +158,17 @@ const px=x=>(x-x0)*k/((x1-x0)*k)*W,py=y=>(y1-y)/(y1-y0)*H;
 const pathOf=g=>rings(g).map(p=>p.map(r=>'M'+r.map(([x,y])=>px(x).toFixed(2)+' '+py(y).toFixed(2)).join('L')+'Z').join('')).join('');
 $('#map').setAttribute('viewBox',`0 0 ${W} ${H.toFixed(1)}`);
 
+// label anchor: area-weighted centroid of the largest polygon, in map units
+function centroid(g){
+  let best=null,ba=0;
+  rings(g).forEach(p=>{const r=p[0].map(([x,y])=>[px(x),py(y)]);let a=0,cx=0,cy=0;
+    for(let i=0,j=r.length-1;i<r.length;j=i++){const f=r[j][0]*r[i][1]-r[i][0]*r[j][1];a+=f;cx+=(r[j][0]+r[i][0])*f;cy+=(r[j][1]+r[i][1])*f}
+    if(Math.abs(a)>ba&&a){ba=Math.abs(a);best=[cx/(3*a),cy/(3*a)]}});
+  return best;
+}
+const labels=feats.map(f=>{const c=centroid(f.geometry);if(!c)return '';
+  return `<text x="${c[0].toFixed(2)}" y="${c[1].toFixed(2)}" class="lbl" text-anchor="middle" dominant-baseline="middle">${esc(byCode[f.properties.adm2_pcode].name.replace(/ Oruko$/,'/Oruko'))}</text>`}).join('');
+
 // ---- colour ramp
 const STOPS=[[255,247,188],[254,196,79],[217,95,14],[127,39,4]];
 const ramp=t=>{t=Math.max(0,Math.min(1,t));const s=t*(STOPS.length-1),i=Math.min(Math.floor(s),STOPS.length-2),u=s-i;
@@ -180,7 +193,7 @@ function draw(){
   const svg=feats.map(f=>{const d=byCode[f.properties.adm2_pcode];
     return `<path class="lga${sel===d.b.pcode?' sel':''}" data-c="${esc(d.b.pcode)}" d="${pathOf(f.geometry)}" fill="${colour(d)}"><title>${esc(d.name)}${m.f?': '+m.fmt(m.f(d)):''}</title></path>`}).join('');
   const dots=$('#showFac').checked?B.facilities.map(([x,y,l])=>`<circle cx="${px(x).toFixed(2)}" cy="${py(y).toFixed(2)}" r="${l===2?.9:l===1?.6:.35}" fill="${l===2?'#111':l===1?'#1d4ed8':'#0b6e4f'}" fill-opacity=".8" pointer-events="none"/>`).join(''):'';
-  $('#map').innerHTML=svg+dots;
+  $('#map').innerHTML=svg+dots+(($('#showNames').checked)?labels:'');
   $('#map').querySelectorAll('.lga').forEach(p=>p.onclick=()=>{sel=p.dataset.c;draw()});
   // legend
   if(metric==='plan'){
@@ -254,7 +267,7 @@ function showTab(t){
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 $('#metric').onchange=e=>{metric=e.target.value;draw()};
-$('#showFac').onchange=draw;
+$('#showFac').onchange=draw;$('#showNames').onchange=draw;
 
 $('#chips').innerHTML=[
  `Cases: ${B.year} (Ministry of Health)`,
