@@ -26,6 +26,8 @@ main{padding:16px 20px;max-width:1300px;margin:0 auto}
 .hint{color:var(--muted);font-size:13px;margin:4px 0}
 .notice{background:#fff8e6;border:1px solid #f1d38a;border-radius:6px;padding:8px 10px;font-size:13px;margin:8px 0}
 .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+button#dlGeo,button#dlCsv,button#dlFac{font:inherit;padding:6px 12px;border:1px solid var(--accent);background:#fff;color:var(--accent);border-radius:6px;cursor:pointer}
+button#dlGeo:hover,button#dlCsv:hover,button#dlFac:hover{background:#eef6f2}
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;max-width:100%}
 svg{width:100%;height:auto;display:block}
 .lga{stroke:#fff;stroke-width:.4;cursor:pointer}
@@ -86,6 +88,16 @@ footer{padding:16px 20px;color:var(--muted);font-size:12px;text-align:center}
     <section class="card" id="extra" hidden></section>
   </div>
   <section class="card method" id="view-method" hidden></section>
+  <section class="card" id="downloads">
+    <h2>Data downloads</h2>
+        <p class="hint">Open the results in GIS software (such as QGIS) or a spreadsheet for further analysis. Layers are in WGS 84 (EPSG:4326); the join key is <code>adm2_pcode</code>.</p>
+    <div class="controls">
+      <button id="dlGeo">LGA results (GeoJSON)</button>
+      <button id="dlCsv">LGA results (CSV)</button>
+      <button id="dlFac">Health facilities (GeoJSON)</button>
+    </div>
+    <p class="hint" id="dlNote"></p>
+  </section>
 </main>
 <footer>Suitability describes habitat conditions, not disease risk. Observed burden is facility-reported and approximate. See Method and data.</footer>
 
@@ -279,6 +291,46 @@ function method(){
   <h3>5. Data files and rebuilding</h3>
   <p><code>data/akwa_ibom_burden.json</code> is built offline by <code>scripts/build_burden.py</code> from the cases CSV and GRID3 facilities. <code>data/akwa_ibom_suitability.json</code> is built by <code>scripts/build_data.py</code> using Earth Engine (the <i>Refresh Earth Engine data</i> workflow). Settings are in <code>config.json</code>.</p>`;
 }
+
+// ---- downloads (flat attribute table shared by the GeoJSON and CSV exports)
+function attrs(d){
+  const b=d.b,s=d.s,o={adm2_pcode:b.pcode,lga_name:d.name,area_km2:b.area_km2};
+  if(s){
+    o.suit_score=s.suit;
+    LKEYS.forEach((k,i)=>o['s_'+k]=s.s[i]);
+    o.rainfall_mm=s.raw.rainfall_mm;o.temp_c=s.raw.temperature_c;o.ndvi=s.raw.ndvi;
+    o.water_pct_1km=s.raw.water_density_pct;o.twi=s.raw.twi;
+    o.pop_2020=s.pop_total;o.pop_high_suit=s.ph;o.pop_mod_suit=s.pm;o.pop_low_suit=s.pl;
+    o.area_high_km2=s.ah;o.area_mod_km2=s.am;o.area_low_km2=s.al;
+    o.dist_fac_km=s.access.pop_weighted_dist_km;o.pop_beyond=s.access.pop_beyond;
+    o.pop_high_beyond=s.access.pop_high_beyond;o.share_beyond=beyondShare(d);
+    o.access_km=S.access_threshold_km;
+  }
+  Object.assign(o,{rdt_tested:b.tested,rdt_pos:b.pos,tpr:b.tpr,tpr_u5:b.tpr_u5,tpr_o5:b.tpr_o5,
+    rdt_tested_u5:b.tested_u5,rdt_tested_o5:b.tested_o5,rdt_pos_u5:b.pos_u5,rdt_pos_o5:b.pos_o5,
+    uncomp_u5:b.unc_u5,uncomp_o5:b.unc_o5,uncomp_total:b.unc,
+    n_fac:b.fac.total,fac_primary:b.fac.primary,fac_second:b.fac.secondary,fac_tert:b.fac.tertiary,
+    fac_public:b.fac.public,fac_private:b.fac.private,fac_per100km2:b.fac_per_100km2,
+    data_flag:b.flags.join(';')});
+  return o;
+}
+function save(name,text,type){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));
+  a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('#dlGeo').onclick=()=>save('akwa_ibom_malaria_lga_results.geojson',JSON.stringify({
+  type:'FeatureCollection',name:'akwa_ibom_malaria_lga_results',
+  crs:{type:'name',properties:{name:'urn:ogc:def:crs:OGC:1.3:CRS84'}},
+  features:feats.map(f=>({type:'Feature',properties:attrs(byCode[f.properties.adm2_pcode]),geometry:f.geometry}))}),'application/geo+json');
+$('#dlCsv').onclick=()=>{
+  const rows=ROWS.map(attrs),cols=Object.keys(rows[0]),q=v=>v==null?'':/[",\n]/.test(v)?'"'+String(v).replace(/"/g,'""')+'"':v;
+  save('akwa_ibom_malaria_lga_results.csv',[cols.join(',')].concat(rows.map(r=>cols.map(c=>q(r[c])).join(','))).join('\n'),'text/csv');
+};
+$('#dlFac').onclick=()=>save('akwa_ibom_health_facilities.geojson',JSON.stringify({
+  type:'FeatureCollection',name:'akwa_ibom_health_facilities',
+  crs:{type:'name',properties:{name:'urn:ogc:def:crs:OGC:1.3:CRS84'}},
+  features:B.facilities.map(([x,y,l])=>({type:'Feature',properties:{level:['Primary','Secondary','Tertiary'][l]||'Unknown'},geometry:{type:'Point',coordinates:[x,y]}}))}),'application/geo+json');
+$('#dlNote').textContent=S?'Includes suitability, population, access and 2023 burden fields. Source: GRID3 (facilities), Ministry of Health (cases), Earth Engine (suitability).':'Suitability fields are not built yet; the files currently contain 2023 burden and facility counts only.';
 
 showTab('suit');
 })();
